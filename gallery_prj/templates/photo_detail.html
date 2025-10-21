@@ -1,0 +1,213 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Photo {{ photo_id }} - Gallery</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      background-color: #0a0a0a;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      padding: 10px;
+      font-family: Arial, sans-serif;
+      color: white;
+      overflow: hidden; /* Убираем скролл на всей странице */
+    }
+
+    .back-link {
+      color: #666;
+      text-decoration: none;
+      font-size: 18px;
+      transition: color 0.3s ease;
+      position: absolute;
+      top: 20px;
+      left: 20px;
+      z-index: 100;
+      background-color: rgba(0, 0, 0, 0.7);
+      padding: 8px 15px;
+      border-radius: 5px;
+    }
+
+    .back-link:hover {
+      color: #fff;
+      background-color: rgba(0, 0, 0, 0.9);
+    }
+
+    .main-content {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      width: 100%;
+      position: relative;
+    }
+
+    .navigation-container {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      width: 100%;
+      max-width: 95vw;
+      position: absolute;
+      top: 50%;
+      transform: translateY(-50%);
+      z-index: 10;
+    }
+
+    .nav-arrow {
+      color: #666;
+      text-decoration: none;
+      font-size: 36px;
+      font-weight: bold;
+      padding: 15px;
+      transition: all 0.3s ease;
+      background-color: rgba(0, 0, 0, 0.5);
+      border-radius: 50%;
+      width: 70px;
+      height: 70px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .nav-arrow:hover {
+      color: #fff;
+      background-color: rgba(0, 0, 0, 0.8);
+      transform: scale(1.1);
+    }
+
+    .nav-arrow.hidden {
+      visibility: hidden;
+      pointer-events: none;
+    }
+
+    .photo-container {
+      width: 100%;
+      height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 60px 20px 20px; /* Учитываем место для кнопки назад */
+    }
+
+    .photo-wrapper {
+      border: 3px solid #333;
+      border-radius: 12px;
+      overflow: hidden;
+      max-width: 90vw;
+      max-height: 90vh;
+      line-height: 0;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.7);
+    }
+
+    .photo-full {
+      max-width: 90vw;
+      max-height: 90vh;
+      width: auto;
+      height: auto;
+      display: block;
+    }
+
+    .photo-info {
+      position: absolute;
+      bottom: 20px;
+      left: 0;
+      right: 0;
+      text-align: center;
+      color: #ccc;
+      background-color: rgba(0, 0, 0, 0.7);
+      padding: 10px;
+      margin: 0 20px;
+      border-radius: 5px;
+    }
+
+    @media (max-width: 768px) {
+      body {
+        padding: 5px;
+      }
+
+      .back-link {
+        font-size: 16px;
+        top: 15px;
+        left: 15px;
+        padding: 6px 12px;
+      }
+
+      .nav-arrow {
+        font-size: 28px;
+        width: 60px;
+        height: 60px;
+        padding: 12px;
+      }
+
+      .photo-wrapper {
+        max-width: 95vw;
+        max-height: 85vh;
+      }
+
+      .photo-full {
+        max-width: 95vw;
+        max-height: 85vh;
+      }
+
+      .photo-info {
+        bottom: 10px;
+        margin: 0 10px;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .nav-arrow {
+        font-size: 24px;
+        width: 50px;
+        height: 50px;
+        padding: 10px;
+      }
+
+      .photo-wrapper {
+        max-height: 80vh;
+      }
+
+      .photo-full {
+        max-height: 80vh;
+      }
+    }
+  </style>
+</head>
+<body>
+  <a href="../../home" class="back-link">← Вернуться в галерею</a>
+
+  <div class="main-content">
+    <div class="navigation-container">
+      <!-- Стрелка влево -->
+      <a href="../{{ prev_photo_id }}/" class="nav-arrow {% if photo_id == 1 %}hidden{% endif %}">←</a>
+
+      <!-- Стрелка вправо -->
+      <a href="../{{ next_photo_id }}/" class="nav-arrow {% if photo_id == 9 %}hidden{% endif %}">→</a>
+    </div>
+
+    <div class="photo-container">
+      <div class="photo-wrapper">
+        <img src="{% static 'images/image-' %}{{ photo_id }}.png"
+             alt="Photo {{ photo_id }}"
+             class="photo-full">
+      </div>
+    </div>
+
+    <div class="photo-info">
+      <h2>Photo {{ photo_id }}</h2>
+    </div>
+  </div>
+</body>
+</html>

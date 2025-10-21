@@ -1,0 +1,188 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Галерея фотографий</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      background-color: #0a0a0a;
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 40px;
+      font-family: Arial, sans-serif;
+    }
+
+    .gallery {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 20px;
+      max-width: 1200px;
+      width: 100%;
+    }
+
+    .photo-link {
+      text-decoration: none;
+      display: block;
+    }
+
+    .photo {
+      width: 100%;
+      height: 300px;
+      border: 3px solid #333;
+      border-radius: 12px;
+      overflow: hidden;
+      transition: all 0.3s ease;
+      background: #1a1a1a;
+    }
+
+    .photo:hover {
+      border-color: #666;
+      transform: translateY(-5px);
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+    }
+
+    .photo img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+      transition: transform 0.3s ease;
+    }
+
+    .photo:hover img {
+      transform: scale(1.05);
+    }
+
+    @media (max-width: 1024px) {
+      .gallery {
+        grid-template-columns: repeat(2, 1fr);
+        max-width: 800px;
+      }
+    }
+
+    @media (max-width: 768px) {
+      .gallery {
+        grid-template-columns: 1fr;
+        max-width: 400px;
+        gap: 15px;
+      }
+
+      .photo {
+        height: 250px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="gallery">
+    <!-- Фото 1 -->
+    <a href="/gallery/photo/1/" class="photo-link">
+      <div class="photo">
+        <img src="{% static 'images/image-1.png' %}" alt="Photo 1">
+      </div>
+    </a>
+
+    <!-- Фото 2 -->
+    <a href="/gallery/photo/2/" class="photo-link">
+      <div class="photo">
+        <img src="{% static 'images/image-2.png' %}" alt="Photo 2">
+      </div>
+    </a>
+
+    <!-- Фото 3 -->
+    <a href="/gallery/photo/3/" class="photo-link">
+      <div class="photo">
+        <img src="{% static 'images/image-3.png' %}" alt="Photo 3">
+      </div>
+    </a>
+
+    <!-- Фото 4 -->
+    <a href="/gallery/photo/4/" class="photo-link">
+      <div class="photo">
+        <img src="{% static 'images/image-4.png' %}" alt="Photo 4">
+      </div>
+    </a>
+
+    <!-- Фото 5 -->
+    <a href="/gallery/photo/5/" class="photo-link">
+      <div class="photo">
+        <img src="{% static 'images/image-5.png' %}" alt="Photo 5">
+      </div>
+    </a>
+
+    <!-- Фото 6 -->
+    <a href="/gallery/photo/6/" class="photo-link">
+      <div class="photo">
+        <img src="{% static 'images/image-6.png' %}" alt="Photo 6">
+      </div>
+    </a>
+
+    <!-- Фото 7 -->
+    <a href="/gallery/photo/7/" class="photo-link">
+      <div class="photo">
+        <img src="{% static 'images/image-7.png' %}" alt="Photo 7">
+      </div>
+    </a>
+
+    <!-- Фото 8 -->
+    <a href="/gallery/photo/8/" class="photo-link">
+      <div class="photo">
+        <img src="{% static 'images/image-8.png' %}" alt="Photo 8">
+      </div>
+    </a>
+
+    <!-- Фото 9 -->
+    <a href="/gallery/photo/9/" class="photo-link">
+      <div class="photo">
+        <img src="{% static 'images/image-9.png' %}" alt="Photo 9">
+      </div>
+    </a>
+
+        <!-- Фото 10 -->
+    <a href="/gallery/photo/10/" class="photo-link">
+      <div class="photo">
+        <img src="{% static 'images/image-10.png' %}" alt="Photo 10">
+      </div>
+    </a>
+
+        <!-- Фото 11 -->
+    <a href="/gallery/photo/11/" class="photo-link">
+      <div class="photo">
+        <img src="{% static 'images/image-11.png' %}" alt="Photo 11">
+      </div>
+    </a>
+
+        <!-- Фото 12 -->
+    <a href="/gallery/photo/12/" class="photo-link">
+      <div class="photo">
+        <img src="{% static 'images/image-12.png' %}" alt="Photo 12">
+      </div>
+    </a>
+
+        <!-- Фото 13 -->
+    <a href="/gallery/photo/13/" class="photo-link">
+      <div class="photo">
+        <img src="{% static 'images/image-13.png' %}" alt="Photo 13">
+      </div>
+    </a>
+
+        <!-- Фото 14 -->
+    <a href="/gallery/photo/14/" class="photo-link">
+      <div class="photo">
+        <img src="{% static 'images/image-14.png' %}" alt="Photo 14">
+      </div>
+    </a>
+  </div>
+</body>
+</html>
