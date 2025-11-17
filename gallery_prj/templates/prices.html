@@ -1,0 +1,88 @@
+{% load static %}
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Услуги и цены - Фотограф</title>
+    <link rel="stylesheet" href="{% static 'styles.css' %}">
+</head>
+<body class="prices-page">
+ {% include 'header.html' %}
+
+    <main class="prices-main">
+        <div class="container">
+            <h1 class="prices-title">Услуги и цены</h1>
+
+            <!-- Отображение услуг по категориям -->
+            <div class="services-container">
+                {% for service_type, service_list in services_by_type.items %}
+                <section class="service-category">
+                    <h2 class="category-title">{{ service_list.0.get_service_type_display }}</h2>
+                    <div class="prices-grid">
+                        {% for service in service_list %}
+                        <div class="price-card">
+                            <h3 class="service-name">{{ service.name }}</h3>
+                            <p class="service-description">{{ service.description }}</p>
+                            {% if service.duration %}
+                            <div class="service-duration">⏱ {{ service.duration }}</div>
+                            {% endif %}
+                            <div class="service-price">{{ service.price }} ₽</div>
+                            <button class="book-button">Забронировать</button>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </section>
+                {% empty %}
+                <div class="no-services">
+                    <p>Услуги временно недоступны. Пожалуйста, проверьте позже.</p>
+                </div>
+                {% endfor %}
+            </div>
+
+            <!-- Пагинация -->
+{% if is_paginated %}
+<div class="pagination">
+    <div class="pagination-container">
+        {% if page_obj.has_previous %}
+            <a href="?page=1" class="pagination-arrow first" title="Первая страница">
+                <span>⟪</span>
+            </a>
+            <a href="?page={{ page_obj.previous_page_number }}" class="pagination-arrow prev" title="Предыдущая страница">
+                <span>‹</span>
+            </a>
+        {% else %}
+            <span class="pagination-arrow first disabled" title="Первая страница">
+                <span>⟪</span>
+            </span>
+            <span class="pagination-arrow prev disabled" title="Предыдущая страница">
+                <span>‹</span>
+            </span>
+        {% endif %}
+
+        <span class="pagination-current">
+            Страница {{ page_obj.number }} из {{ page_obj.paginator.num_pages }}
+        </span>
+
+        {% if page_obj.has_next %}
+            <a href="?page={{ page_obj.next_page_number }}" class="pagination-arrow next" title="Следующая страница">
+                <span>›</span>
+            </a>
+            <a href="?page={{ page_obj.paginator.num_pages }}" class="pagination-arrow last" title="Последняя страница">
+                <span>⟫</span>
+            </a>
+        {% else %}
+            <span class="pagination-arrow next disabled" title="Следующая страница">
+                <span>›</span>
+            </span>
+            <span class="pagination-arrow last disabled" title="Последняя страница">
+                <span>⟫</span>
+            </span>
+        {% endif %}
+    </div>
+</div>
+{% endif %}
+        </div>
+    </main>
+</body>
+</html>
