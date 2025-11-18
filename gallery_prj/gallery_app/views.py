@@ -1,7 +1,11 @@
-from django.shortcuts import render
+from django.shortcuts import render, redirect
+from django.contrib.auth import login, authenticate
+from django.contrib.auth.forms import UserCreationForm, AuthenticationForm
+from django.contrib.auth.decorators import login_required
+from django.contrib.auth.views import LoginView
+from django.utils.decorators import method_decorator
 from django.views.generic import ListView
 from .models import Service
-
 # Create your views here.
 
 
@@ -44,3 +48,22 @@ class ServiceListView(ListView):
 
         context['services_by_type'] = services_by_type
         return context
+
+def login(request):
+    return render(request, 'login.html')
+
+
+def register(request):
+    if request.method == 'POST':
+        form = UserCreationForm(request.POST)
+        if form.is_valid():
+            user = form.save()
+            username = form.cleaned_data.get('username')
+            password = form.cleaned_data.get('password1')
+            user = authenticate(username=username, password=password)
+            login(request, user)
+            return redirect('home')
+    else:
+        form = UserCreationForm()
+
+    return render(request, 'register.html', {'form': form})
