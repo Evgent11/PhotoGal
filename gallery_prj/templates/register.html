@@ -1,0 +1,111 @@
+{% load static %}
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Регистрация - Фотограф</title>
+    <link rel="stylesheet" href="{% static 'styles.css' %}">
+</head>
+<body class="login-page">
+    {% include 'header.html' %}
+
+    <main class="login-main">
+        <div class="login-container">
+            <div class="login-card">
+                <div class="login-header">
+                    <h1 class="login-title">Регистрация</h1>
+                    <p class="login-subtitle">Создайте новый аккаунт</p>
+                </div>
+
+                <form method="post" class="login-form">
+                    {% csrf_token %}
+
+                    {% if form.errors %}
+                    <div class="error-message">
+                        <div class="error-icon">!</div>
+                        <div>
+                            {% for field in form %}
+                                {% for error in field.errors %}
+                                    <p>{{ error }}</p>
+                                {% endfor %}
+                            {% endfor %}
+                            {% for error in form.non_field_errors %}
+                                <p>{{ error }}</p>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <div class="form-group">
+                        <label for="id_username" class="form-label">Имя пользователя</label>
+                        <div class="input-wrapper">
+                            {{ form.username }}
+                            <span class="input-icon">👤</span>
+                        </div>
+                        <div class="help-text">{{ form.username.help_text }}</div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="id_password1" class="form-label">Пароль</label>
+                        <div class="input-wrapper">
+                            {{ form.password1 }}
+                            <span class="input-icon">🔒</span>
+                        </div>
+                        <div class="help-text">{{ form.password1.help_text }}</div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="id_password2" class="form-label">Подтверждение пароля</label>
+                        <div class="input-wrapper">
+                            {{ form.password2 }}
+                            <span class="input-icon">🔒</span>
+                        </div>
+                        <div class="help-text">{{ form.password2.help_text }}</div>
+                    </div>
+
+                    <button type="submit" class="login-button">
+                        <span class="button-text">Зарегистрироваться</span>
+                        <span class="button-arrow">→</span>
+                    </button>
+
+                    <div class="login-footer">
+                        <p>Уже есть аккаунт? <a href="../login" class="register-link">Войти</a></p>
+                    </div>
+                </form>
+            </div>
+
+            <div class="login-decoration">
+                <div class="decoration-circle circle-1"></div>
+                <div class="decoration-circle circle-2"></div>
+                <div class="decoration-circle circle-3"></div>
+                <div class="camera-icon">📷</div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // Добавляем классы и placeholder к полям формы
+        document.addEventListener('DOMContentLoaded', function() {
+            const usernameField = document.getElementById('id_username');
+            const password1Field = document.getElementById('id_password1');
+            const password2Field = document.getElementById('id_password2');
+
+            if (usernameField) {
+                usernameField.className = 'form-input';
+                usernameField.placeholder = 'Введите имя пользователя';
+            }
+
+            if (password1Field) {
+                password1Field.className = 'form-input';
+                password1Field.placeholder = 'Введите пароль';
+            }
+
+            if (password2Field) {
+                password2Field.className = 'form-input';
+                password2Field.placeholder = 'Подтвердите пароль';
+            }
+        });
+    </script>
+</body>
+</html>
