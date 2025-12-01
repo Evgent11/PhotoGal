@@ -15,7 +15,7 @@
             <div class="login-card">
                 <div class="login-header">
                     <h1 class="login-title">Регистрация</h1>
-                    <p class="login-subtitle">Создайте новый аккаунт</p>
+                    <p class="login-subtitle">Присоединяйтесь к {{ total_users|default:"0" }} пользователям</p>
                 </div>
 
                 <form method="post" class="login-form">
@@ -24,35 +24,56 @@
                     {% if form.errors %}
                     <div class="error-message">
                         <div class="error-icon">!</div>
-                        <div>
+                        <div class="error-list">
                             {% for field in form %}
                                 {% for error in field.errors %}
-                                    <p>{{ error }}</p>
+                                    <p class="error-item">{{ error }}</p>
                                 {% endfor %}
                             {% endfor %}
                             {% for error in form.non_field_errors %}
-                                <p>{{ error }}</p>
+                                <p class="error-item">{{ error }}</p>
                             {% endfor %}
                         </div>
                     </div>
                     {% endif %}
 
                     <div class="form-group">
-                        <label for="id_username" class="form-label">Имя пользователя</label>
+                        <label for="id_username" class="form-label">
+                            Имя пользователя
+                            <span class="field-info">(будет проверено в базе данных)</span>
+                        </label>
                         <div class="input-wrapper">
                             {{ form.username }}
                             <span class="input-icon">👤</span>
                         </div>
+                        {% if form.username.help_text %}
                         <div class="help-text">{{ form.username.help_text }}</div>
+                        {% endif %}
                     </div>
 
                     <div class="form-group">
-                        <label for="id_password1" class="form-label">Пароль</label>
+                        <label for="id_email" class="form-label">
+                            Email
+                            <span class="field-info">(будет проверен на уникальность)</span>
+                        </label>
+                        <div class="input-wrapper">
+                            {{ form.email }}
+                            <span class="input-icon">📧</span>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="id_password1" class="form-label">
+                            Пароль
+                            <span class="field-info">(будет сохранен в зашифрованном виде)</span>
+                        </label>
                         <div class="input-wrapper">
                             {{ form.password1 }}
                             <span class="input-icon">🔒</span>
                         </div>
+                        {% if form.password1.help_text %}
                         <div class="help-text">{{ form.password1.help_text }}</div>
+                        {% endif %}
                     </div>
 
                     <div class="form-group">
@@ -61,16 +82,20 @@
                             {{ form.password2 }}
                             <span class="input-icon">🔒</span>
                         </div>
-                        <div class="help-text">{{ form.password2.help_text }}</div>
+                    </div>
+
+                    <div class="database-info">
+                        <div class="db-icon">🗄️</div>
+                        <p>Ваши данные будут безопасно сохранены в базе данных</p>
                     </div>
 
                     <button type="submit" class="login-button">
-                        <span class="button-text">Зарегистрироваться</span>
-                        <span class="button-arrow">→</span>
+                        <span class="button-text">Создать аккаунт</span>
+                        <span class="button-db">💾</span>
                     </button>
 
                     <div class="login-footer">
-                        <p>Уже есть аккаунт? <a href="../login" class="register-link">Войти</a></p>
+                        <p>Уже есть аккаунт? <a href="{% url 'login' %}" class="register-link">Войти</a></p>
                     </div>
                 </form>
             </div>
@@ -79,32 +104,44 @@
                 <div class="decoration-circle circle-1"></div>
                 <div class="decoration-circle circle-2"></div>
                 <div class="decoration-circle circle-3"></div>
-                <div class="camera-icon">📷</div>
+                <div class="database-icon">🗃️</div>
+                <div class="db-stats">
+                    <div class="stat-item">
+                        <span class="stat-number">{{ total_users|default:"0" }}</span>
+                        <span class="stat-label">пользователей</span>
+                    </div>
+                </div>
             </div>
         </div>
     </main>
 
     <script>
-        // Добавляем классы и placeholder к полям формы
-        document.addEventListener('DOMContentLoaded', function() {
-            const usernameField = document.getElementById('id_username');
-            const password1Field = document.getElementById('id_password1');
-            const password2Field = document.getElementById('id_password2');
+        // Анимация при отправке формы
+        document.querySelector('.login-form').addEventListener('submit', function(e) {
+            const button = this.querySelector('.login-button');
+            const originalText = button.querySelector('.button-text').textContent;
 
-            if (usernameField) {
-                usernameField.className = 'form-input';
-                usernameField.placeholder = 'Введите имя пользователя';
-            }
+            button.disabled = true;
+            button.querySelector('.button-text').textContent = 'Сохранение в базу...';
+            button.style.opacity = '0.7';
 
-            if (password1Field) {
-                password1Field.className = 'form-input';
-                password1Field.placeholder = 'Введите пароль';
-            }
+            // Добавляем небольшую задержку для демонстрации
+            setTimeout(() => {
+                button.querySelector('.button-text').textContent = originalText;
+                button.disabled = false;
+                button.style.opacity = '1';
+            }, 2000);
+        });
 
-            if (password2Field) {
-                password2Field.className = 'form-input';
-                password2Field.placeholder = 'Подтвердите пароль';
-            }
+        // Валидация в реальном времени
+        document.querySelectorAll('.form-input').forEach(input => {
+            input.addEventListener('blur', function() {
+                if (this.value.trim() !== '') {
+                    this.classList.add('filled');
+                } else {
+                    this.classList.remove('filled');
+                }
+            });
         });
     </script>
 </body>
