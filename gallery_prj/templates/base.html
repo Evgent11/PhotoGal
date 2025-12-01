@@ -1,0 +1,39 @@
+{% load static %}
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Фотограф{% endblock %}</title>
+    <link rel="stylesheet" href="{% static 'styles.css' %}">
+</head>
+<body class="{% block body_class %}{% endblock %}">
+    {% include 'header.html' %}
+
+    <!-- Сообщения Django -->
+    {% if messages %}
+    <div class="messages">
+        {% for message in messages %}
+        <div class="message {{ message.tags }}">
+            {{ message }}
+        </div>
+        {% endfor %}
+    </div>
+
+    <script>
+        // Автоматическое скрытие сообщений через 5 секунд
+        setTimeout(() => {
+            document.querySelectorAll('.message').forEach(msg => {
+                msg.classList.add('hide');
+                setTimeout(() => msg.remove(), 300);
+            });
+        }, 5000);
+    </script>
+    {% endif %}
+
+    <main>
+        {% block content %}
+        {% endblock %}
+    </main>
+</body>
+</html>

@@ -3,15 +3,107 @@
     <nav class="nav">
         <ul class="nav-menu">
             <li class="nav-item">
-                <a href="/gallery/home" class="nav-link">Главная</a>
+                <a href="/" class="nav-link">Главная</a>
             </li>
             <li class="nav-item">
-                <a href="/gallery/prices" class="nav-link">Услуги и цены</a>
+                <a href="/prices/" class="nav-link">Услуги и цены</a>
             </li>
         </ul>
         <div class="nav-auth">
-            <a href="/gallery/login" class="auth-link">Войти</a>
+            {% if user.is_authenticated %}
+                <div class="user-menu">
+                    <div class="user-info">
+                        <span class="user-avatar">{{ user.username|first|upper }}</span>
+                        <span class="user-name">{{ user.username|truncatechars:15 }}</span>
+                    </div>
+                    <div class="dropdown-content">
+                        <a href="/profile/" class="dropdown-item">
+                            <span class="dropdown-icon">⚙️</span>
+                            Профиль
+                        </a>
+                        <a href="/logout/" class="dropdown-item logout-item" onclick="return confirmLogout()">
+                            <span class="dropdown-icon">🚪</span>
+                            Выйти
+                        </a>
+                    </div>
+                </div>
+            {% else %}
+                <div class="auth-links">
+                    <a href="/login/" class="auth-link login-link">Войти</a>
+                    <a href="/register/" class="auth-link register-link">Регистрация</a>
+                </div>
+            {% endif %}
         </div>
     </nav>
 </header>
 
+<script>
+    // Подтверждение выхода
+    function confirmLogout() {
+        const confirmed = confirm("Вы уверены, что хотите выйти из системы?");
+        if (confirmed) {
+            // Показываем сообщение о выходе
+            showNotification('Вы выходите из системы...', 'info');
+            return true;
+        }
+        return false;
+    }
+
+    // Уведомление
+    function showNotification(message, type = 'info') {
+        const notification = document.createElement('div');
+        notification.className = `notification notification-${type}`;
+        notification.textContent = message;
+        notification.style.cssText = `
+            position: fixed;
+            top: 100px;
+            right: 20px;
+            background: rgba(26, 26, 26, 0.95);
+            color: white;
+            padding: 1rem 2rem;
+            border-radius: 8px;
+            border-left: 4px solid #666;
+            z-index: 9999;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+            animation: slideIn 0.3s ease-out;
+        `;
+
+        document.body.appendChild(notification);
+
+        setTimeout(() => {
+            notification.style.animation = 'slideOut 0.3s ease-out forwards';
+            setTimeout(() => notification.remove(), 300);
+        }, 2000);
+    }
+
+    // Добавляем стили для анимации
+    const style = document.createElement('style');
+    style.textContent = `
+        @keyframes slideIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        @keyframes slideOut {
+            from {
+                transform: translateX(0);
+                opacity: 1;
+            }
+            to {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+        }
+
+        .notification-info {
+            border-left-color: #2196F3 !important;
+        }
+    `;
+    document.head.appendChild(style);
+</script>

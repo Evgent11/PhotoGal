@@ -1,17 +1,16 @@
 from django.shortcuts import render, redirect
 from django.contrib.auth import login, authenticate
-from django.contrib.auth.forms import UserCreationForm, AuthenticationForm
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.views import LoginView
-from django.utils.decorators import method_decorator
-from django.views.generic import ListView
-from .models import Service
 from django.contrib import messages
+from django.contrib.auth.models import User  # ИМПОРТ МОДЕЛИ USER
 from .forms import CustomUserCreationForm, CustomAuthenticationForm
+from .models import Service
 import time
-from django.contrib.auth.models import User
+from django.contrib.auth import logout
 
 
+# Главная страница
 def home_view(request):
     try:
         user_count = User.objects.count()
@@ -112,7 +111,7 @@ def register_view(request):
                 print(f"[DEBUG] Создан пользователь с ID: {user.id}")
 
                 messages.success(request, f'Аккаунт успешно создан для {username}!')
-                return redirect('home')
+                return redirect('../home')
     else:
         form = CustomUserCreationForm()
 
@@ -133,25 +132,49 @@ def register_view(request):
 def profile_view(request):
     user = request.user
 
-    # Можно добавить логику для сохранения дополнительных данных
+    # Получаем дополнительные данные о пользователе
+    from django.utils import timezone
+    from datetime import timedelta
+
+    if hasattr(user, 'date_joined') and user.date_joined:
+        days_registered = (timezone.now() - user.date_joined).days
+    else:
+        days_registered = 0
+
+    # Если пользователь сохранил профиль
     if request.method == 'POST':
         email = request.POST.get('email')
-        if email:
-            user.email = email
-            user.save()
-            messages.success(request, 'Email успешно обновлен!')
+        first_name = request.POST.get('first_name')
+        last_name = request.POST.get('last_name')
 
-    # Вычисляем сколько дней пользователь с нами
-    from django.utils import timezone
-    if hasattr(user, 'date_joined') and user.date_joined:
-        joined_days = (timezone.now() - user.date_joined).days
-    else:
-        joined_days = 0
+        if email and email != user.email:
+            # Проверяем, не занят ли email другим пользователем
+            from django.contrib.auth.models import User
+            if not User.objects.filter(email=email).exclude(id=user.id).exists():
+                user.email = email
+                user.save()
+                messages.success(request, 'Email успешно обновлен!')
+            else:
+                messages.error(request, 'Этот email уже используется другим пользователем')
+
+        if first_name != user.first_name:
+            user.first_name = first_name
+            user.save()
+
+        if last_name != user.last_name:
+            user.last_name = last_name
+            user.save()
+
+        if first_name or last_name:
+            messages.success(request, 'Профиль обновлен!')
 
     context = {
         'user': user,
-        'joined_days': joined_days,
+        'days_registered': days_registered,
+        'is_admin': user.is_superuser,
+        'is_staff': user.is_staff,
     }
+
     return render(request, 'profile.html', context)
 
 
@@ -196,3 +219,11 @@ def db_test_view(request):
         context['error'] = error
 
     return render(request, 'db_test.html', context)
+
+
+def custom_logout_view(request):
+    if request.user.is_authenticated:
+        username = request.user.username
+        logout(request)
+        messages.info(request, f'Вы успешно вышли из системы. До свидания, {username}!')
+    return redirect('/home/')

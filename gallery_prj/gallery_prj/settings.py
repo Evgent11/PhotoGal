@@ -97,9 +97,9 @@ AUTH_PASSWORD_VALIDATORS = [
 ]
 
 # Ваши настройки аутентификации
-LOGIN_REDIRECT_URL = '/home'
-LOGOUT_REDIRECT_URL = '/home'
-LOGIN_URL = '/login/'
+LOGIN_REDIRECT_URL = '/home'      # куда перенаправлять после входа
+LOGOUT_REDIRECT_URL = '/'         # куда перенаправлять после выхода - ОБЯЗАТЕЛЬНО!
+LOGIN_URL = '/login/'             # URL для входа
 
 
 # Internationalization
