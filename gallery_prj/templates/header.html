@@ -11,6 +11,16 @@
         </ul>
         <div class="nav-auth">
             {% if user.is_authenticated %}
+
+                    <a href="/booking/my/" class="dropdown-item">
+
+                    Мои бронирования
+                </a>
+                <a href="/booking/create/" class="dropdown-item">
+
+                    Новое бронирование
+                </a>
+
                 <div class="user-menu">
                     <div class="user-info">
                         <span class="user-avatar">{{ user.username|first|upper }}</span>
@@ -18,20 +28,32 @@
                     </div>
                     <div class="dropdown-content">
                         <a href="/profile/" class="dropdown-item">
-                            <span class="dropdown-icon">⚙️</span>
+
                             Профиль
                         </a>
                         <a href="/logout/" class="dropdown-item logout-item" onclick="return confirmLogout()">
-                            <span class="dropdown-icon">🚪</span>
+
                             Выйти
                         </a>
                     </div>
                 </div>
+
+
+
+
+
+
             {% else %}
+
                 <div class="auth-links">
                     <a href="/login/" class="auth-link login-link">Войти</a>
                     <a href="/register/" class="auth-link register-link">Регистрация</a>
                 </div>
+
+
+            {% endif %}
+                {% if user.is_staff or user.is_superuser %}
+                <div class="dropdown-divider"></div>
             {% endif %}
         </div>
     </nav>

@@ -1,16 +1,19 @@
-from django.shortcuts import render, redirect
 from django.contrib.auth import login, authenticate
-from django.contrib.auth.decorators import login_required
 from django.contrib.auth.views import LoginView
 from django.contrib import messages
-from django.contrib.auth.models import User  # ИМПОРТ МОДЕЛИ USER
+from django.contrib.auth.models import User
 from .forms import CustomUserCreationForm, CustomAuthenticationForm
-from .models import Service
 import time
 from django.contrib.auth import logout
+from django.utils import timezone
+from .forms import BookingForm, AdminBookingForm
+import datetime
+from django.core.paginator import Paginator
+from .models import Booking, Service
+from django.shortcuts import render, redirect, get_object_or_404
+from django.contrib.auth.decorators import login_required, user_passes_test
+from django.db.models import Q
 
-
-# Главная страница
 def home_view(request):
     try:
         user_count = User.objects.count()
@@ -23,7 +26,7 @@ def home_view(request):
     return render(request, 'home.html', context)
 
 
-# Страница цен
+
 def prices_view(request):
     services = Service.objects.filter(is_active=True)
     services_by_type = {}
@@ -38,17 +41,17 @@ def prices_view(request):
     })
 
 
-# Галерея
+
 def gallery_view(request):
     return render(request, 'gallery.html')
 
 
-# Детали фото
+
 def photo_detail_view(request, photo_id):
     return render(request, 'photo_detail.html', {'photo_id': photo_id})
 
 
-# Кастомный логин
+
 class CustomLoginView(LoginView):
     template_name = 'login.html'
     authentication_form = CustomAuthenticationForm
@@ -87,7 +90,7 @@ class CustomLoginView(LoginView):
         return context
 
 
-# Регистрация
+
 def register_view(request):
     if request.method == 'POST':
         form = CustomUserCreationForm(request.POST)
@@ -95,10 +98,8 @@ def register_view(request):
         if form.is_valid():
             start_time = time.time()
 
-            # Сохранение пользователя в базу данных
             user = form.save()
 
-            # Автоматический вход после регистрации
             username = form.cleaned_data.get('username')
             password = form.cleaned_data.get('password1')
             user = authenticate(username=username, password=password)
@@ -127,12 +128,12 @@ def register_view(request):
     return render(request, 'register.html', context)
 
 
-# Страница профиля
+
 @login_required
 def profile_view(request):
     user = request.user
 
-    # Получаем дополнительные данные о пользователе
+
     from django.utils import timezone
     from datetime import timedelta
 
@@ -141,14 +142,14 @@ def profile_view(request):
     else:
         days_registered = 0
 
-    # Если пользователь сохранил профиль
+
     if request.method == 'POST':
         email = request.POST.get('email')
         first_name = request.POST.get('first_name')
         last_name = request.POST.get('last_name')
 
         if email and email != user.email:
-            # Проверяем, не занят ли email другим пользователем
+
             from django.contrib.auth.models import User
             if not User.objects.filter(email=email).exclude(id=user.id).exists():
                 user.email = email
@@ -178,8 +179,7 @@ def profile_view(request):
     return render(request, 'profile.html', context)
 
 
-# Список пользователей (только для админов)
-@login_required
+@login_required()
 def users_list_view(request):
     if not request.user.is_superuser:
         messages.error(request, 'У вас нет прав для просмотра этой страницы')
@@ -189,41 +189,359 @@ def users_list_view(request):
     return render(request, 'users_list.html', {'users': users})
 
 
-# Тест базы данных
-def db_test_view(request):
-    """Страница для тестирования работы с базой данных"""
-    from django.db import connection
-
-    try:
-        user_count = User.objects.count()
-        recent_users = User.objects.order_by('-date_joined')[:5]
-        has_db = True
-    except Exception as e:
-        user_count = 0
-        recent_users = []
-        has_db = False
-        error = str(e)
-
-    # Показать SQL запросы (если DEBUG = True)
-    queries = connection.queries if hasattr(connection, 'queries') else []
-
-    context = {
-        'user_count': user_count,
-        'recent_users': recent_users,
-        'has_db': has_db,
-        'queries': queries[-10:],  # Последние 10 запросов
-        'total_queries': len(queries),
-    }
-
-    if not has_db:
-        context['error'] = error
-
-    return render(request, 'db_test.html', context)
-
-
 def custom_logout_view(request):
     if request.user.is_authenticated:
         username = request.user.username
         logout(request)
-        messages.info(request, f'Вы успешно вышли из системы. До свидания, {username}!')
     return redirect('/home/')
+
+
+@login_required
+def create_booking(request):
+    """Создание нового бронирования"""
+    if request.method == 'POST':
+        form = BookingForm(request.POST, request=request)
+        if form.is_valid():
+            booking = form.save(commit=False)
+
+            # Если пользователь авторизован, привязываем его
+            if request.user.is_authenticated:
+                booking.user = request.user
+
+            # Если пользователь не указал email, используем email из аккаунта
+            if not booking.client_email and request.user.is_authenticated:
+                booking.client_email = request.user.email
+
+            booking.save()
+
+            messages.success(request,
+                             '✅ Бронирование успешно создано! '
+                             'Мы свяжемся с вами в течение 24 часов для подтверждения.'
+                             )
+
+            # Отправка email уведомления (можно реализовать позже)
+            # send_booking_confirmation_email(booking)
+
+            return redirect('booking_detail', booking_id=booking.id)
+    else:
+        # Если передан service_id в GET параметрах
+        service_id = request.GET.get('service_id')
+        initial = {}
+        if service_id:
+            try:
+                service = Service.objects.get(id=service_id, can_be_booked=True)
+                initial['service'] = service
+            except Service.DoesNotExist:
+                pass
+
+        form = BookingForm(initial=initial, request=request)
+
+    # Получаем доступные даты для календаря
+    available_dates = get_available_dates()
+
+    context = {
+        'form': form,
+        'available_dates': available_dates,
+        'title': 'Новое бронирование',
+    }
+    return render(request, 'create_booking.html', context)
+
+@login_required
+def user_bookings(request):
+    """Список бронирований пользователя"""
+    bookings = Booking.objects.filter(user=request.user).order_by('-created_at')
+
+    # Фильтрация по статусу
+    status_filter = request.GET.get('status')
+    if status_filter:
+        bookings = bookings.filter(status=status_filter)
+
+    # Пагинация
+    paginator = Paginator(bookings, 10)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+
+    # Статистика
+    stats = {
+        'total': bookings.count(),
+        'pending': bookings.filter(status='pending').count(),
+        'confirmed': bookings.filter(status='confirmed').count(),
+        'upcoming': bookings.filter(
+            status='confirmed',
+            booking_date__gte=timezone.now().date()
+        ).count(),
+    }
+
+    context = {
+        'page_obj': page_obj,
+        'stats': stats,
+        'status_filter': status_filter,
+        'title': 'Мои бронирования',
+    }
+    return render(request, 'user_bookings.html', context)
+
+@login_required
+def booking_detail(request, booking_id):
+    """Детальная информация о бронировании"""
+    try:
+        booking = Booking.objects.get(id=booking_id, user=request.user)
+    except Booking.DoesNotExist:
+        messages.error(request, 'Бронирование не найдено или у вас нет доступа.')
+        return redirect('user_bookings')
+
+    can_cancel = (
+            booking.status in ['pending', 'confirmed'] and
+            booking.is_upcoming() and
+            booking.get_days_until() >= 2
+    )
+
+    context = {
+        'booking': booking,
+        'can_cancel': can_cancel,
+        'title': f'Бронирование #{booking.id}',
+    }
+    return render(request, 'booking/detail.html', context)
+
+@login_required
+def cancel_booking(request, booking_id):
+    """Отмена бронирования пользователем"""
+    try:
+        booking = Booking.objects.get(id=booking_id, user=request.user)
+    except Booking.DoesNotExist:
+        messages.error(request, 'Бронирование не найдено.')
+        return redirect('user_bookings')
+
+    # Проверяем условия отмены
+    if booking.status not in ['pending', 'confirmed']:
+        messages.error(request, 'Невозможно отменить бронирование с текущим статусом.')
+        return redirect('booking_detail', booking_id=booking_id)
+
+    if not booking.is_upcoming():
+        messages.error(request, 'Невозможно отменить прошедшее бронирование.')
+        return redirect('booking_detail', booking_id=booking_id)
+
+    if booking.get_days_until() < 2:
+        messages.error(request, 'Отмена возможна минимум за 48 часов до съемки.')
+        return redirect('booking_detail', booking_id=booking_id)
+
+    if request.method == 'POST':
+        booking.status = 'cancelled'
+        booking.save()
+
+        messages.warning(request, 'Бронирование отменено.')
+        # send_booking_cancellation_email(booking)  # Отправка уведомления
+
+        return redirect('user_bookings')
+
+    context = {
+        'booking': booking,
+        'title': 'Отмена бронирования',
+    }
+    return render(request, 'booking/cancel_confirm.html', context)
+
+
+def is_admin(user):
+    return user.is_authenticated and (user.is_staff or user.is_superuser)
+
+
+@login_required
+@user_passes_test(is_admin)
+def admin_booking_list(request):
+    """Список всех бронирований для администратора"""
+    bookings = Booking.objects.all().order_by('-created_at')
+
+    # Фильтрация
+    status_filter = request.GET.get('status')
+    date_filter = request.GET.get('date')
+    search_query = request.GET.get('search')
+
+    if status_filter:
+        bookings = bookings.filter(status=status_filter)
+
+    if date_filter:
+        try:
+            filter_date = datetime.datetime.strptime(date_filter, '%Y-%m-%d').date()
+            bookings = bookings.filter(booking_date=filter_date)
+        except ValueError:
+            pass
+
+    if search_query:
+        bookings = bookings.filter(
+            Q(client_name__icontains=search_query) |
+            Q(client_phone__icontains=search_query) |
+            Q(client_email__icontains=search_query) |
+            Q(service__name__icontains=search_query)
+        )
+
+    # Пагинация
+    paginator = Paginator(bookings, 20)
+    page_number = request.GET.get('page')
+    page_obj = paginator.get_page(page_number)
+
+    # Статистика
+    today = timezone.now().date()
+    stats = {
+        'total': Booking.objects.count(),
+        'pending': Booking.objects.filter(status='pending').count(),
+        'today': Booking.objects.filter(booking_date=today, status='confirmed').count(),
+        'upcoming': Booking.objects.filter(
+            booking_date__gte=today,
+            status='confirmed'
+        ).count(),
+        'revenue': sum(b.get_total_price() for b in Booking.objects.filter(
+            status__in=['confirmed', 'completed']
+        ) if b.get_total_price()),
+    }
+
+    context = {
+        'page_obj': page_obj,
+        'stats': stats,
+        'filters': {
+            'status': status_filter,
+            'date': date_filter,
+            'search': search_query,
+        },
+        'title': 'Управление бронированиями',
+    }
+    return render(request, 'booking/admin_list.html', context)
+
+@login_required
+@user_passes_test(is_admin)
+def admin_booking_detail(request, booking_id):
+    """Детальная информация о бронировании для администратора"""
+    booking = get_object_or_404(Booking, id=booking_id)
+
+    if request.method == 'POST':
+        form = AdminBookingForm(request.POST, instance=booking)
+        if form.is_valid():
+            updated_booking = form.save(commit=False)
+
+            # Если статус изменился на confirmed/rejected/completed, сохраняем администратора
+            if form.has_changed() and 'status' in form.changed_data:
+                updated_booking.admin_user = request.user
+
+            updated_booking.save()
+
+            messages.success(request, 'Бронирование обновлено.')
+
+            # Отправка уведомления пользователю при изменении статуса
+            if 'status' in form.changed_data:
+                # send_booking_status_update_email(booking)
+                pass
+
+            return redirect('admin_booking_detail', booking_id=booking_id)
+    else:
+        form = AdminBookingForm(instance=booking)
+
+    # История изменений (можно добавить модель History позже)
+    # history = BookingHistory.objects.filter(booking=booking).order_by('-created_at')
+
+    context = {
+        'booking': booking,
+        'form': form,
+        # 'history': history,
+        'title': f'Бронирование #{booking.id}',
+    }
+    return render(request, 'booking/admin_detail.html', context)
+
+@login_required
+@user_passes_test(is_admin)
+def admin_calendar_view(request):
+
+    year = request.GET.get('year')
+    month = request.GET.get('month')
+
+    if year and month:
+        try:
+            year = int(year)
+            month = int(month)
+        except ValueError:
+            year = timezone.now().year
+            month = timezone.now().month
+    else:
+        year = timezone.now().year
+        month = timezone.now().month
+
+    start_date = datetime.date(year, month, 1)
+    if month == 12:
+        end_date = datetime.date(year + 1, 1, 1)
+    else:
+        end_date = datetime.date(year, month + 1, 1)
+
+    bookings = Booking.objects.filter(
+        booking_date__gte=start_date,
+        booking_date__lt=end_date,
+        status='confirmed'
+    ).order_by('booking_date', 'booking_time')
+
+    bookings_by_day = {}
+    for booking in bookings:
+        day = booking.booking_date.day
+        if day not in bookings_by_day:
+            bookings_by_day[day] = []
+        bookings_by_day[day].append(booking)
+
+    import calendar
+    cal = calendar.monthcalendar(year, month)
+
+    prev_month = month - 1 if month > 1 else 12
+    prev_year = year if month > 1 else year - 1
+    next_month = month + 1 if month < 12 else 1
+    next_year = year if month < 12 else year + 1
+
+    context = {
+        'calendar': cal,
+        'year': year,
+        'month': month,
+        'month_name': calendar.month_name[month],
+        'bookings_by_day': bookings_by_day,
+        'prev_month': prev_month,
+        'prev_year': prev_year,
+        'next_month': next_month,
+        'next_year': next_year,
+        'today': timezone.now().date(),
+        'title': 'Календарь бронирований',
+    }
+    return render(request, 'booking/admin_calendar.html', context)
+
+
+def get_available_dates():
+    """Получение доступных дат для бронирования"""
+    from datetime import timedelta
+
+    available_dates = []
+    today = timezone.now().date()
+
+    # Бронирование доступно на 3 месяца вперед
+    end_date = today + timedelta(days=90)
+
+    current_date = today + timedelta(days=2)  # Минимум за 48 часов
+
+    while current_date <= end_date:
+        # Исключаем воскресенья
+        if current_date.weekday() != 6:
+            # Проверяем, не слишком ли много бронирований на этот день
+            # (можно ограничить, например, 2 бронированиями в день)
+            bookings_count = Booking.objects.filter(
+                booking_date=current_date,
+                status__in=['confirmed', 'pending']
+            ).count()
+
+            if bookings_count < 3:  # Максимум 3 съемки в день
+                available_dates.append(current_date)
+
+        current_date += timedelta(days=1)
+
+    return available_dates
+
+
+def check_date_availability(date):
+    """Проверка доступности даты"""
+    # Получаем все подтвержденные бронирования на эту дату
+    bookings = Booking.objects.filter(
+        booking_date=date,
+        status__in=['confirmed']
+    )
+    total_hours = sum(booking.duration for booking in bookings)
+
+    return total_hours < 8

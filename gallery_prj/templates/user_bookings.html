@@ -1,0 +1,177 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Мои бронирования{% endblock %}
+{% block body_class %}my-bookings-page{% endblock %}
+<head>
+    <link rel="stylesheet" href="{% static 'styles.css' %}">
+</head>
+    {% block content %}
+<div class="bookings-container">
+    <div class="bookings-header">
+        <h1 class="bookings-title">Мои бронирования</h1>
+       <a href="/booking/create/" class="new-booking-btn">
+            <span class="btn-icon">+</span>
+            Новое бронирование
+        </a>
+    </div>
+    
+    <!-- Статистика -->
+    <div class="bookings-stats">
+        <div class="stat-card">
+            <div class="stat-icon">📅</div>
+            <div class="stat-content">
+                <h3>{{ stats.total }}</h3>
+                <p>Всего бронирований</p>
+            </div>
+        </div>
+        
+        <div class="stat-card">
+            <div class="stat-icon">⏳</div>
+            <div class="stat-content">
+                <h3>{{ stats.pending }}</h3>
+                <p>Ожидают подтверждения</p>
+            </div>
+        </div>
+        
+        <div class="stat-card">
+            <div class="stat-icon">✅</div>
+            <div class="stat-content">
+                <h3>{{ stats.confirmed }}</h3>
+                <p>Подтверждено</p>
+            </div>
+        </div>
+        
+        <div class="stat-card">
+            <div class="stat-icon">🎯</div>
+            <div class="stat-content">
+                <h3>{{ stats.upcoming }}</h3>
+                <p>Предстоящие</p>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Фильтры -->
+    <div class="bookings-filters">
+        <div class="filter-tabs">
+            <a href="/booking/my/" class="filter-tab {% if not status_filter %}active{% endif %}">
+                Все
+            </a>
+            <a href="/booking/my/?status=pending" class="filter-tab {% if status_filter == 'pending' %}active{% endif %}">
+                Ожидают ({{ stats.pending }})
+            </a>
+           <a href="/booking/my/?status=confirmed" class="filter-tab {% if status_filter == 'confirmed' %}active{% endif %}">
+                Подтверждены ({{ stats.confirmed }})
+            </a>
+            <a href="/booking/my/?status=completed" class="filter-tab {% if status_filter == 'completed' %}active{% endif %}">
+                Выполнены
+            </a>
+             <a href="/booking/my/?status=cancelled" class="filter-tab {% if status_filter == 'cancelled' %}active{% endif %}">
+                Отменены
+            </a>
+        </div>
+    </div>
+    
+    <!-- Список бронирований -->
+    {% if page_obj.object_list %}
+    <div class="bookings-list">
+        {% for booking in page_obj.object_list %}
+        <div class="booking-card booking-card-{{ booking.status }}">
+            <div class="booking-card-header">
+                <div class="booking-id">#{{ booking.id|slice:":8" }}</div>
+                <div class="booking-status status-{{ booking.status }}">
+                    {{ booking.get_status_display }}
+                </div>
+            </div>
+            
+            <div class="booking-card-body">
+                <h3 class="booking-service">{{ booking.service.name }}</h3>
+                
+                <div class="booking-details">
+                    <div class="detail-item">
+                        <span class="detail-icon">📅</span>
+                        <span class="detail-text">
+                            {{ booking.booking_date|date:"d.m.Y" }} в {{ booking.booking_time|time:"H:i" }}
+                        </span>
+                    </div>
+                    
+                    <div class="detail-item">
+                        <span class="detail-icon">⏱️</span>
+                        <span class="detail-text">{{ booking.duration }} часов</span>
+                    </div>
+                    
+                    {% if booking.location %}
+                    <div class="detail-item">
+                        <span class="detail-icon">📍</span>
+                        <span class="detail-text">{{ booking.location }}</span>
+                    </div>
+                    {% endif %}
+                    
+                    <div class="detail-item">
+                        <span class="detail-icon">💰</span>
+                        <span class="detail-text">{{ booking.get_total_price }} руб.</span>
+                    </div>
+                </div>
+                
+                {% if booking.client_message %}
+                <div class="booking-message">
+                    <strong>Ваши пожелания:</strong>
+                    <p>{{ booking.client_message|truncatechars:150 }}</p>
+                </div>
+                {% endif %}
+            </div>
+            
+            <div class="booking-card-footer">
+                 <a href="/booking/{{ booking.id }}/" class="detail-link">
+                    Подробнее →
+                </a>
+                <span class="booking-date">
+                    Создано: {{ booking.created_at|date:"d.m.Y" }}
+                </span>
+            </div>
+            
+            {% if booking.status == 'pending' and booking.is_upcoming %}
+            <div class="booking-card-actions">
+                <a href="/booking/{{ booking.id }}/cancel/" class="cancel-link">
+                    Отменить бронирование
+                </a>
+            </div>
+            {% endif %}
+        </div>
+        {% endfor %}
+    </div>
+    
+    <!-- Пагинация -->
+    {% if page_obj.has_other_pages %}
+    <div class="pagination">
+        {% if page_obj.has_previous %}
+            <a href="?page=1{% if status_filter %}&status={{ status_filter }}{% endif %}" class="page-link">«</a>
+            <a href="?page={{ page_obj.previous_page_number }}{% if status_filter %}&status={{ status_filter }}{% endif %}" class="page-link">‹</a>
+        {% endif %}
+        
+        <span class="current-page">
+            Страница {{ page_obj.number }} из {{ page_obj.paginator.num_pages }}
+        </span>
+        
+        {% if page_obj.has_next %}
+            <a href="?page={{ page_obj.next_page_number }}{% if status_filter %}&status={{ status_filter }}{% endif %}" class="page-link">›</a>
+            <a href="?page={{ page_obj.paginator.num_pages }}{% if status_filter %}&status={{ status_filter }}{% endif %}" class="page-link">»</a>
+        {% endif %}
+    </div>
+    {% endif %}
+    
+    {% else %}
+    <div class="no-bookings">
+        <div class="no-bookings-icon">📅</div>
+        <h3>У вас пока нет бронирований</h3>
+        <p>Забронируйте свою первую съемку прямо сейчас!</p>
+        <a href="/booking/create/" class="cta-button">
+            Забронировать съемку
+        </a>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_css %}
+{% endblock %}
