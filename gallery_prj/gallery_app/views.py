@@ -195,57 +195,6 @@ def custom_logout_view(request):
         logout(request)
     return redirect('/home/')
 
-
-@login_required
-def create_booking(request):
-    """Создание нового бронирования"""
-    if request.method == 'POST':
-        form = BookingForm(request.POST, request=request)
-        if form.is_valid():
-            booking = form.save(commit=False)
-
-            # Если пользователь авторизован, привязываем его
-            if request.user.is_authenticated:
-                booking.user = request.user
-
-            # Если пользователь не указал email, используем email из аккаунта
-            if not booking.client_email and request.user.is_authenticated:
-                booking.client_email = request.user.email
-
-            booking.save()
-
-            messages.success(request,
-                             '✅ Бронирование успешно создано! '
-                             'Мы свяжемся с вами в течение 24 часов для подтверждения.'
-                             )
-
-            # Отправка email уведомления (можно реализовать позже)
-            # send_booking_confirmation_email(booking)
-
-            return redirect('booking_detail', booking_id=booking.id)
-    else:
-        # Если передан service_id в GET параметрах
-        service_id = request.GET.get('service_id')
-        initial = {}
-        if service_id:
-            try:
-                service = Service.objects.get(id=service_id, can_be_booked=True)
-                initial['service'] = service
-            except Service.DoesNotExist:
-                pass
-
-        form = BookingForm(initial=initial, request=request)
-
-    # Получаем доступные даты для календаря
-    available_dates = get_available_dates()
-
-    context = {
-        'form': form,
-        'available_dates': available_dates,
-        'title': 'Новое бронирование',
-    }
-    return render(request, 'create_booking.html', context)
-
 @login_required
 def user_bookings(request):
     """Список бронирований пользователя"""
@@ -280,64 +229,8 @@ def user_bookings(request):
     }
     return render(request, 'user_bookings.html', context)
 
-@login_required
-def booking_detail(request, booking_id):
-    """Детальная информация о бронировании"""
-    try:
-        booking = Booking.objects.get(id=booking_id, user=request.user)
-    except Booking.DoesNotExist:
-        messages.error(request, 'Бронирование не найдено или у вас нет доступа.')
-        return redirect('user_bookings')
 
-    can_cancel = (
-            booking.status in ['pending', 'confirmed'] and
-            booking.is_upcoming() and
-            booking.get_days_until() >= 2
-    )
 
-    context = {
-        'booking': booking,
-        'can_cancel': can_cancel,
-        'title': f'Бронирование #{booking.id}',
-    }
-    return render(request, 'booking/detail.html', context)
-
-@login_required
-def cancel_booking(request, booking_id):
-    """Отмена бронирования пользователем"""
-    try:
-        booking = Booking.objects.get(id=booking_id, user=request.user)
-    except Booking.DoesNotExist:
-        messages.error(request, 'Бронирование не найдено.')
-        return redirect('user_bookings')
-
-    # Проверяем условия отмены
-    if booking.status not in ['pending', 'confirmed']:
-        messages.error(request, 'Невозможно отменить бронирование с текущим статусом.')
-        return redirect('booking_detail', booking_id=booking_id)
-
-    if not booking.is_upcoming():
-        messages.error(request, 'Невозможно отменить прошедшее бронирование.')
-        return redirect('booking_detail', booking_id=booking_id)
-
-    if booking.get_days_until() < 2:
-        messages.error(request, 'Отмена возможна минимум за 48 часов до съемки.')
-        return redirect('booking_detail', booking_id=booking_id)
-
-    if request.method == 'POST':
-        booking.status = 'cancelled'
-        booking.save()
-
-        messages.warning(request, 'Бронирование отменено.')
-        # send_booking_cancellation_email(booking)  # Отправка уведомления
-
-        return redirect('user_bookings')
-
-    context = {
-        'booking': booking,
-        'title': 'Отмена бронирования',
-    }
-    return render(request, 'booking/cancel_confirm.html', context)
 
 
 def is_admin(user):
@@ -504,6 +397,106 @@ def admin_calendar_view(request):
     }
     return render(request, 'booking/admin_calendar.html', context)
 
+@login_required
+def create_booking(request):
+    """Создание нового бронирования"""
+    if request.method == 'POST':
+        form = BookingForm(request.POST, request=request)
+        if form.is_valid():
+            booking = form.save(commit=False)
+
+            # Если пользователь авторизован, привязываем его
+            if request.user.is_authenticated:
+                booking.user = request.user
+
+            # Если пользователь не указал email, используем email из аккаунта
+            if not booking.client_email and request.user.is_authenticated:
+                booking.client_email = request.user.email
+
+            booking.save()
+
+            messages.success(request,
+                             '✅ Бронирование успешно создано! '
+                             'Мы свяжемся с вами в течение 24 часов для подтверждения.'
+                             )
+
+            return redirect('/booking/my/')  # Изменено на абсолютный путь
+        else:
+            # Если форма невалидна, показываем ошибки
+            available_dates = Booking.get_available_dates()
+            return render(request, 'create_booking.html', {
+                'form': form,
+                'available_dates': available_dates
+            })
+    else:
+        # GET запрос - показываем пустую форму
+        form = BookingForm(request=request)
+        available_dates = get_available_dates()
+        return render(request, 'create_booking.html', {
+            'form': form,
+            'available_dates': available_dates
+        })
+
+@login_required
+def delete_booking(request, booking_id):
+    """Удаление бронирования"""
+    booking = get_object_or_404(Booking, id=booking_id)
+
+    # Проверяем, что пользователь имеет право удалять это бронирование
+    if booking.user != request.user and not request.user.is_staff:
+        return HttpResponseForbidden("У вас нет прав для удаления этого бронирования")
+
+    # Проверяем статус бронирования (можно удалять только определенные статусы)
+    if booking.status == 'completed':
+        messages.error(request, "Нельзя удалить выполненное бронирование")
+        return redirect('/booking/my/')  # Изменено на абсолютный путь
+
+    if request.method == 'POST':
+        # Удаляем бронирование
+        booking.delete()
+
+        # Показываем сообщение об успешном удалении
+        messages.success(request, "Бронирование успешно удалено")
+
+        # Перенаправляем обратно на страницу бронирований
+        return redirect('/booking/my/')  # Изменено на абсолютный путь
+    else:
+        # GET запрос - показываем страницу подтверждения
+        return render(request, 'delete_confirmation.html', {'booking': booking})
+
+@login_required
+def cancel_booking(request, booking_id):
+    """Отмена бронирования пользователем"""
+    try:
+        booking = Booking.objects.get(id=booking_id, user=request.user)
+    except Booking.DoesNotExist:
+        messages.error(request, 'Бронирование не найдено.')
+        return redirect('/booking/my/')  # Изменено на абсолютный путь
+
+    # Проверяем условия отмены
+    if booking.status not in ['pending', 'confirmed']:
+        messages.error(request, 'Невозможно отменить бронирование с текущим статусом.')
+        return redirect(f'/booking/{booking_id}/')  # Изменено на абсолютный путь
+
+    if not booking.is_upcoming():
+        messages.error(request, 'Невозможно отменить прошедшее бронирование.')
+        return redirect(f'/booking/{booking_id}/')  # Изменено на абсолютный путь
+
+    if booking.get_days_until() < 2:
+        messages.error(request, 'Отмена возможна минимум за 48 часов до съемки.')
+        return redirect(f'/booking/{booking_id}/')  # Изменено на абсолютный путь
+
+    if request.method == 'POST':
+        booking.status = 'cancelled'
+        booking.save()
+
+        messages.warning(request, 'Бронирование отменено.')
+        # send_booking_cancellation_email(booking)  # Отправка уведомления
+
+        return redirect('/booking/my/')  # Изменено на абсолютный путь
+
+    # Если GET запрос, показываем страницу подтверждения
+    return render(request, 'cancel_confirmation.html', {'booking': booking})
 
 def get_available_dates():
     """Получение доступных дат для бронирования"""
@@ -545,3 +538,7 @@ def check_date_availability(date):
     total_hours = sum(booking.duration for booking in bookings)
 
     return total_hours < 8
+
+
+
+

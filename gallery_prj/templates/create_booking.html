@@ -1,187 +1,236 @@
 {% extends 'base.html' %}
+{% load static %}
 
-{% block title %}Создание бронирования{% endblock %}
+{% block title %}Бронирование услуги{% endblock %}
+{% block body_class %}booking-page{% endblock %}
 
 {% block content %}
-<div class="card">
-    <h1>Новое бронирование</h1>
+<div class="booking-container">
+    <div class="booking-form-wrapper">
+        <div class="booking-form-container">
+            <h1 class="booking-title">Бронирование услуги</h1>
+            <p class="booking-subtitle">Заполните форму ниже для бронирования съемки</p>
 
-    <div class="booking-steps">
-        <div class="step active">1. Выбор услуги</div>
-        <div class="step">2. Дата и время</div>
-        <div class="step">3. Контактные данные</div>
-        <div class="step">4. Подтверждение</div>
+            <form method="post" class="booking-form" id="bookingForm">
+                {% csrf_token %}
+
+                {% if form.errors %}
+                <div class="error-message">
+                    <div class="error-icon">⚠️</div>
+                    <div class="error-content">
+                        <h4>Пожалуйста, исправьте ошибки:</h4>
+                        <ul>
+                            {% for field in form %}
+                                {% for error in field.errors %}
+                                    <li>{{ field.label }}: {{ error }}</li>
+                                {% endfor %}
+                            {% endfor %}
+                            {% for error in form.non_field_errors %}
+                                <li>{{ error }}</li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                </div>
+                {% endif %}
+
+                <!-- Выбор услуги -->
+                <div class="form-section">
+                    <h3 class="section-title">Выберите услугу</h3>
+                    <div class="services-grid">
+                        {% for service in form.service.field.queryset %}
+                        <label class="service-option">
+                            <input type="radio" name="service" value="{{ service.id }}"
+                                   class="service-radio" id="service_{{ service.id }}"
+                                   {% if form.service.value == service.id %}checked{% endif %}>
+                            <div class="service-content">
+                                <div class="service-icon">
+                                    {% if service.service_type == 'PHOTO' %}📷
+                                    {% elif service.service_type == 'VIDEO' %}🎥
+                                    {% elif service.service_type == 'EDITING' %}💻
+                                    {% else %}✨{% endif %}
+                                </div>
+                                <h4>{{ service.name }}</h4>
+                                <p class="service-price">{{ service.price }} руб.</p>
+                                <p class="service-duration">{{ service.duration }}</p>
+                            </div>
+                        </label>
+                        {% empty %}
+                        <p class="no-services">Нет доступных услуг для бронирования.</p>
+                        {% endfor %}
+                    </div>
+                    {% if form.service.errors %}
+                    <div class="field-error">{{ form.service.errors }}</div>
+                    {% endif %}
+                </div>
+
+                <!-- Дата и время -->
+                <div class="form-section">
+                    <h3 class="section-title">Дата и время съемки</h3>
+
+                    <div class="date-selection">
+                        <div class="section-subtitle">Доступные даты</div>
+                        <div class="available-dates">
+                            {% for date in available_dates %}
+                            <label class="date-option">
+                                <input type="radio" name="booking_date" value="{{ date|date:'Y-m-d' }}"
+                                       class="date-radio" id="date_{{ forloop.counter }}"
+                                       {% if form.booking_date.value == date|date:'Y-m-d' %}checked{% endif %}>
+                                <div class="date-content">
+                                    <span class="day">{{ date|date:'d' }}</span>
+                                    <span class="month">{{ date|date:'M' }}</span>
+                                    <span class="weekday">{{ date|date:'D' }}</span>
+                                </div>
+                            </label>
+                            {% endfor %}
+                        </div>
+                        {% if form.booking_date.errors %}
+                        <div class="field-error">{{ form.booking_date.errors }}</div>
+                        {% endif %}
+
+                        <div class="time-fields">
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="{{ form.booking_time.id_for_label }}" class="form-label">Время начала</label>
+                                    {{ form.booking_time }}
+                                    <small class="form-help">Рабочее время с 9:00 до 21:00</small>
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="{{ form.duration.id_for_label }}" class="form-label">Продолжительность (часы)</label>
+                                    {{ form.duration }}
+                                    <small class="form-help">Минимум 1 час, максимум 8 часов</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="{{ form.location.id_for_label }}" class="form-label">Место съемки</label>
+                        {{ form.location }}
+                        <small class="form-help">Адрес или название места</small>
+                    </div>
+                </div>
+
+                <!-- Контактная информация -->
+                <div class="form-section">
+                    <h3 class="section-title">Контактная информация</h3>
+
+                    <div class="form-group">
+                        <label for="{{ form.client_name.id_for_label }}" class="form-label">Ваше имя</label>
+                        {{ form.client_name }}
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="{{ form.client_phone.id_for_label }}" class="form-label">Телефон</label>
+                            {{ form.client_phone }}
+                        </div>
+
+                        <div class="form-group">
+                            <label for="{{ form.client_email.id_for_label }}" class="form-label">Email</label>
+                            {{ form.client_email }}
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="{{ form.client_message.id_for_label }}" class="form-label">Дополнительные пожелания</label>
+                        {{ form.client_message }}
+                        <small class="form-help">Опишите ваши идеи, стиль съемки, количество людей и т.д.</small>
+                    </div>
+                </div>
+
+                <!-- Условия -->
+                <div class="form-section">
+                    <h3 class="section-title">Подтверждение</h3>
+
+                    <div class="form-group terms-checkbox">
+                        <label class="checkbox-label">
+                            {{ form.confirm_terms }}
+                            <span class="checkbox-custom"></span>
+                            Я согласен с условиями бронирования и политикой конфиденциальности
+                        </label>
+                        {% if form.confirm_terms.errors %}
+                        <div class="field-error">{{ form.confirm_terms.errors }}</div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- Кнопка отправки -->
+                <div class="form-submit">
+                    <button type="submit" class="submit-btn">Забронировать</button>
+                </div>
+            </form>
+        </div>
     </div>
-
-    <form method="POST" action="/booking/create/">
-        {% csrf_token %}
-
-        <!-- Step 1: Service Selection -->
-        <div id="step-1" class="booking-step">
-            <h2>Выберите услугу</h2>
-            <div class="form-group">
-                <label class="form-label">Услуга:</label>
-                <select name="service" class="form-input" required>
-                    <option value="">-- Выберите услугу --</option>
-                    {% for service in form.service.field.queryset %}
-                        <option value="{{ service.id }}" {% if service.id == form.initial.service.id %}selected{% endif %}>
-                            {{ service.name }} - {{ service.price }} руб.
-                        </option>
-                    {% endfor %}
-                </select>
-            </div>
-
-            <div class="mt-3">
-                <button type="button" class="btn next-step">Далее</button>
-            </div>
-        </div>
-
-        <!-- Step 2: Date & Time -->
-        <div id="step-2" class="booking-step hidden">
-            <h2>Выберите дату и время</h2>
-
-            <div class="form-group">
-                <label class="form-label">Дата съемки:</label>
-                <input type="date" name="booking_date" class="form-input" min="{{ min_date|date:'Y-m-d' }}" required>
-            </div>
-
-            <div class="form-group">
-                <label class="form-label">Время начала:</label>
-                <input type="time" name="booking_time" class="form-input" min="09:00" max="21:00" required>
-            </div>
-
-            <div class="form-group">
-                <label class="form-label">Продолжительность (часы):</label>
-                <input type="number" name="duration" class="form-input" min="1" max="8" value="2" required>
-            </div>
-
-            <div class="mt-3">
-                <button type="button" class="btn btn-secondary prev-step">Назад</button>
-                <button type="button" class="btn next-step">Далее</button>
-            </div>
-        </div>
-
-        <!-- Step 3: Contact Details -->
-        <div id="step-3" class="booking-step hidden">
-            <h2>Контактная информация</h2>
-
-            <div class="form-group">
-                <label class="form-label">Ваше имя:</label>
-                <input type="text" name="client_name" class="form-input" value="{{ user.get_full_name|default:user.username }}" required>
-            </div>
-
-            <div class="form-group">
-                <label class="form-label">Телефон:</label>
-                <input type="tel" name="client_phone" class="form-input" placeholder="+7 (999) 999-99-99" required>
-            </div>
-
-            <div class="form-group">
-                <label class="form-label">Email:</label>
-                <input type="email" name="client_email" class="form-input" value="{{ user.email }}" required>
-            </div>
-
-            <div class="form-group">
-                <label class="form-label">Место съемки:</label>
-                <input type="text" name="location" class="form-input" placeholder="Адрес или название места">
-            </div>
-
-            <div class="mt-3">
-                <button type="button" class="btn btn-secondary prev-step">Назад</button>
-                <button type="button" class="btn next-step">Далее</button>
-            </div>
-        </div>
-
-        <!-- Step 4: Confirmation -->
-        <div id="step-4" class="booking-step hidden">
-            <h2>Подтверждение</h2>
-
-            <div class="card mb-3">
-                <h3>Детали бронирования:</h3>
-                <div id="summary-details"></div>
-            </div>
-
-            <div class="form-group">
-                <label class="form-label">
-                    <input type="checkbox" name="confirm_terms" required>
-                    Я согласен с условиями бронирования
-                </label>
-            </div>
-
-            <div class="mt-3">
-                <button type="button" class="btn btn-secondary prev-step">Назад</button>
-                <button type="submit" class="btn">Создать бронирование</button>
-            </div>
-        </div>
-    </form>
 </div>
+{% endblock %}
 
+{% block extra_css %}
+
+{% endblock %}
+
+{% block extra_js %}
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    let currentStep = 1;
-    const totalSteps = 4;
-    const steps = document.querySelectorAll('.step');
+    console.log('Форма бронирования загружена');
 
-    function showStep(stepNumber) {
-        document.querySelectorAll('.booking-step').forEach(el => el.classList.add('hidden'));
-        document.getElementById(`step-${stepNumber}`).classList.remove('hidden');
-
-        steps.forEach((step, index) => {
-            step.classList.remove('active');
-            if (index < stepNumber) step.classList.add('active');
-        });
-    }
-
-    document.querySelectorAll('.next-step').forEach(btn => {
-        btn.addEventListener('click', function() {
-            if (validateStep(currentStep)) {
-                currentStep++;
-                if (currentStep === totalSteps) {
-                    updateSummary();
-                }
-                showStep(currentStep);
+    // Подсветка выбранной услуги
+    document.querySelectorAll('.service-radio').forEach(radio => {
+        radio.addEventListener('change', function() {
+            document.querySelectorAll('.service-option').forEach(opt => {
+                opt.classList.remove('selected');
+            });
+            if (this.checked) {
+                this.closest('.service-option').classList.add('selected');
             }
         });
-    });
 
-    document.querySelectorAll('.prev-step').forEach(btn => {
-        btn.addEventListener('click', function() {
-            currentStep--;
-            showStep(currentStep);
-        });
-    });
-
-    function validateStep(step) {
-        // Простая валидация для примера
-        if (step === 1) {
-            const service = document.querySelector('[name="service"]').value;
-            if (!service) {
-                alert('Выберите услугу');
-                return false;
-            }
+        // Инициализация состояния выбранной услуги
+        if (radio.checked) {
+            radio.closest('.service-option').classList.add('selected');
         }
-        return true;
-    }
+    });
 
-    function updateSummary() {
-        const formData = new FormData(document.querySelector('form'));
-        const summary = `
-            <p><strong>Услуга:</strong> ${document.querySelector('[name="service"] option:checked').textContent}</p>
-            <p><strong>Дата:</strong> ${formData.get('booking_date')}</p>
-            <p><strong>Время:</strong> ${formData.get('booking_time')}</p>
-            <p><strong>Продолжительность:</strong> ${formData.get('duration')} ч.</p>
-            <p><strong>Имя:</strong> ${formData.get('client_name')}</p>
-            <p><strong>Телефон:</strong> ${formData.get('client_phone')}</p>
-            <p><strong>Email:</strong> ${formData.get('client_email')}</p>
-        `;
-        document.getElementById('summary-details').innerHTML = summary;
-    }
+    // Подсветка выбранной даты
+    document.querySelectorAll('.date-radio').forEach(radio => {
+        radio.addEventListener('change', function() {
+            document.querySelectorAll('.date-option').forEach(opt => {
+                opt.classList.remove('selected');
+            });
+            if (this.checked) {
+                this.closest('.date-option').classList.add('selected');
+            }
+        });
 
-    // Устанавливаем минимальную дату (завтра)
-    const tomorrow = new Date();
-    tomorrow.setDate(tomorrow.getDate() + 1);
-    document.querySelector('[name="booking_date"]').min = tomorrow.toISOString().split('T')[0];
+        // Инициализация состояния выбранной даты
+        if (radio.checked) {
+            radio.closest('.date-option').classList.add('selected');
+        }
+    });
 
-    showStep(1);
+    // Автоматическое добавление класса selected при загрузке страницы
+    document.querySelectorAll('.service-radio:checked').forEach(radio => {
+        radio.closest('.service-option').classList.add('selected');
+    });
+
+    document.querySelectorAll('.date-radio:checked').forEach(radio => {
+        radio.closest('.date-option').classList.add('selected');
+    });
+
+    // Стилизация для визуального отображения выбора
+    const style = document.createElement('style');
+    style.textContent = `
+        .service-option.selected {
+            border-color: #4CAF50;
+            background: rgba(76, 175, 80, 0.1);
+        }
+
+        .date-option.selected {
+            background: #333;
+            border-color: #4CAF50;
+        }
+    `;
+    document.head.appendChild(style);
 });
 </script>
 {% endblock %}
