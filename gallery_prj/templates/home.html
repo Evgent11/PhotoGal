@@ -1,114 +1,17 @@
-
+{% extends 'base.html' %}
 {% load static %}
 
-<!DOCTYPE html>
-<html>
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Галерея фотографий</title>
-  <link rel="stylesheet" href="{% static 'styles.css' %}">
-</head>
-<body class="gallery-page">
-{% include 'header.html' %}
-  <div class="gallery">
-    <!-- Фото 1 -->
-    <a href="/gallery/photo/1/" class="photo-link">
-      <div class="photo">
-        <img src="{% static 'images/image-1.png' %}" alt="Photo 1">
-      </div>
-    </a>
+{% block title %}Галерея фотографий{% endblock %}
+{% block body_class %}gallery-page{% endblock %}
 
-    <!-- Фото 2 -->
-    <a href="/gallery/photo/2/" class="photo-link">
-      <div class="photo">
-        <img src="{% static 'images/image-2.png' %}" alt="Photo 2">
-      </div>
+{% block content %}
+<div class="gallery">
+    {% for i in "1234567891011121314"|make_list %}
+    <a href="/gallery/photo/{{ forloop.counter }}/" class="photo-link">
+        <div class="photo">
+            <img src="{% static 'images/image-'|add:forloop.counter|add:'.png' %}" alt="Photo {{ forloop.counter }}">
+        </div>
     </a>
-
-    <!-- Фото 3 -->
-    <a href="/gallery/photo/3/" class="photo-link">
-      <div class="photo">
-        <img src="{% static 'images/image-3.png' %}" alt="Photo 3">
-      </div>
-    </a>
-
-    <!-- Фото 4 -->
-    <a href="/gallery/photo/4/" class="photo-link">
-      <div class="photo">
-        <img src="{% static 'images/image-4.png' %}" alt="Photo 4">
-      </div>
-    </a>
-
-    <!-- Фото 5 -->
-    <a href="/gallery/photo/5/" class="photo-link">
-      <div class="photo">
-        <img src="{% static 'images/image-5.png' %}" alt="Photo 5">
-      </div>
-    </a>
-
-    <!-- Фото 6 -->
-    <a href="/gallery/photo/6/" class="photo-link">
-      <div class="photo">
-        <img src="{% static 'images/image-6.png' %}" alt="Photo 6">
-      </div>
-    </a>
-
-    <!-- Фото 7 -->
-    <a href="/gallery/photo/7/" class="photo-link">
-      <div class="photo">
-        <img src="{% static 'images/image-7.png' %}" alt="Photo 7">
-      </div>
-    </a>
-
-    <!-- Фото 8 -->
-    <a href="/gallery/photo/8/" class="photo-link">
-      <div class="photo">
-        <img src="{% static 'images/image-8.png' %}" alt="Photo 8">
-      </div>
-    </a>
-
-    <!-- Фото 9 -->
-    <a href="/gallery/photo/9/" class="photo-link">
-      <div class="photo">
-        <img src="{% static 'images/image-9.png' %}" alt="Photo 9">
-      </div>
-    </a>
-
-    <!-- Фото 10 -->
-    <a href="/gallery/photo/10/" class="photo-link">
-      <div class="photo">
-        <img src="{% static 'images/image-10.png' %}" alt="Photo 10">
-      </div>
-    </a>
-
-    <!-- Фото 11 -->
-    <a href="/gallery/photo/11/" class="photo-link">
-      <div class="photo">
-        <img src="{% static 'images/image-11.png' %}" alt="Photo 11">
-      </div>
-    </a>
-
-    <!-- Фото 12 -->
-    <a href="/gallery/photo/12/" class="photo-link">
-      <div class="photo">
-        <img src="{% static 'images/image-12.png' %}" alt="Photo 12">
-      </div>
-    </a>
-
-    <!-- Фото 13 -->
-    <a href="/gallery/photo/13/" class="photo-link">
-      <div class="photo">
-        <img src="{% static 'images/image-13.png' %}" alt="Photo 13">
-      </div>
-    </a>
-
-    <!-- Фото 14 -->
-    <a href="/gallery/photo/14/" class="photo-link">
-      <div class="photo">
-        <img src="{% static 'images/image-14.png' %}" alt="Photo 14">
-      </div>
-    </a>
-  </div>
-</body>
-</html>
+    {% endfor %}
+</div>
+{% endblock %}

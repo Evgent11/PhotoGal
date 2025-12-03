@@ -1,502 +1,187 @@
 {% extends 'base.html' %}
-{% load static %}
 
-{% block title %}Бронирование услуги{% endblock %}
-{% block body_class %}booking-page{% endblock %}
+{% block title %}Создание бронирования{% endblock %}
 
 {% block content %}
-<div class="booking-container">
-    <div class="booking-wizard">
-        <div class="wizard-steps">
-            <div class="step active" data-step="1">1. Выбор услуги</div>
-            <div class="step" data-step="2">2. Дата и время</div>
-            <div class="step" data-step="3">3. Контактная информация</div>
-            <div class="step" data-step="4">4. Подтверждение</div>
-        </div>
+<div class="card">
+    <h1>Новое бронирование</h1>
 
-        <div class="booking-form-container">
-            <h1 class="booking-title">Бронирование услуги</h1>
-            <p class="booking-subtitle">Заполните форму ниже для бронирования съемки</p>
-
-            <form method="post" class="booking-form" id="bookingForm">
-                {% csrf_token %}
-
-                {% if form.errors %}
-                <div class="error-message">
-                    <div class="error-icon">⚠️</div>
-                    <div class="error-content">
-                        <h4>Пожалуйста, исправьте ошибки:</h4>
-                        <ul>
-                            {% for field in form %}
-                                {% for error in field.errors %}
-                                    <li>{{ field.label }}: {{ error }}</li>
-                                {% endfor %}
-                            {% endfor %}
-                            {% for error in form.non_field_errors %}
-                                <li>{{ error }}</li>
-                            {% endfor %}
-                        </ul>
-                    </div>
-                </div>
-                {% endif %}
-
-                <!-- Шаг 1: Выбор услуги -->
-                <div class="form-step active" id="step1" data-step="1">
-                    <h3>Выберите услугу</h3>
-                    <div class="services-grid">
-                        {% for service in form.service.field.queryset %}
-                        <div class="service-option" data-service-id="{{ service.id }}">
-                            <div class="service-icon">
-                                {% if service.service_type == 'PHOTO' %}📷
-                                {% elif service.service_type == 'VIDEO' %}🎥
-                                {% elif service.service_type == 'EDITING' %}💻
-                                {% else %}✨{% endif %}
-                            </div>
-                            <h4>{{ service.name }}</h4>
-                            <p class="service-price">{{ service.price }} руб.</p>
-                            <p class="service-duration">{{ service.duration }}</p>
-                            <button type="button" class="select-service-btn" data-service="{{ service.id }}">
-                                Выбрать
-                            </button>
-                        </div>
-                        {% empty %}
-                        <p class="no-services">Нет доступных услуг для бронирования.</p>
-                        {% endfor %}
-                    </div>
-                    <input type="hidden" name="service" id="id_service" value="{{ form.service.value|default:'' }}">
-                </div>
-
-                <!-- Шаг 2: Дата и время -->
-                <div class="form-step" id="step2" data-step="2">
-                    <h3>Выберите дату и время</h3>
-
-                    <div class="date-selection">
-                        <h4>Доступные даты</h4>
-                        <div class="available-dates">
-                            {% for date in available_dates %}
-                            <div class="date-option {% if date == form.booking_date.value %}selected{% endif %}"
-                                 data-date="{{ date|date:'Y-m-d' }}">
-                                <span class="day">{{ date|date:'d' }}</span>
-                                <span class="month">{{ date|date:'M' }}</span>
-                                <span class="weekday">{{ date|date:'D' }}</span>
-                            </div>
-                            {% endfor %}
-                        </div>
-
-                        <div class="time-selection">
-                            <div class="form-group">
-                                <label for="{{ form.booking_date.id_for_label }}" class="form-label">Дата съемки</label>
-                                <input type="text" name="booking_date" id="id_booking_date" class="form-input"
-                                       value="{{ form.booking_date.value|default:'' }}" readonly>
-                            </div>
-
-                            <div class="form-group">
-                                <label for="{{ form.booking_time.id_for_label }}" class="form-label">Время начала</label>
-                                {{ form.booking_time }}
-                                <small class="form-help">Рабочее время с 9:00 до 21:00</small>
-                            </div>
-
-                            <div class="form-group">
-                                <label for="{{ form.duration.id_for_label }}" class="form-label">Продолжительность (часы)</label>
-                                {{ form.duration }}
-                                <small class="form-help">Минимум 1 час, максимум 8 часов</small>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="{{ form.location.id_for_label }}" class="form-label">Место съемки</label>
-                        {{ form.location }}
-                        <small class="form-help">Адрес или название места</small>
-                    </div>
-                </div>
-
-                <!-- Шаг 3: Контактная информация -->
-                <div class="form-step" id="step3" data-step="3">
-                    <h3>Контактная информация</h3>
-
-                    <div class="form-group">
-                        <label for="{{ form.client_name.id_for_label }}" class="form-label">Ваше имя</label>
-                        {{ form.client_name }}
-                    </div>
-
-                    <div class="form-row">
-                        <div class="form-group">
-                            <label for="{{ form.client_phone.id_for_label }}" class="form-label">Телефон</label>
-                            {{ form.client_phone }}
-                        </div>
-
-                        <div class="form-group">
-                            <label for="{{ form.client_email.id_for_label }}" class="form-label">Email</label>
-                            {{ form.client_email }}
-                        </div>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="{{ form.client_message.id_for_label }}" class="form-label">Дополнительные пожелания</label>
-                        {{ form.client_message }}
-                        <small class="form-help">Опишите ваши идеи, стиль съемки, количество людей и т.д.</small>
-                    </div>
-                </div>
-
-                <!-- Шаг 4: Подтверждение -->
-                <div class="form-step" id="step4" data-step="4">
-                    <h3>Подтверждение бронирования</h3>
-
-                    <div class="booking-summary">
-                        <div class="summary-card">
-                            <h4>Детали услуги</h4>
-                            <div class="summary-item">
-                                <span class="label">Услуга:</span>
-                                <span class="value" id="summary-service">—</span>
-                            </div>
-                            <div class="summary-item">
-                                <span class="label">Дата и время:</span>
-                                <span class="value" id="summary-datetime">—</span>
-                            </div>
-                            <div class="summary-item">
-                                <span class="label">Продолжительность:</span>
-                                <span class="value" id="summary-duration">—</span>
-                            </div>
-                            <div class="summary-item">
-                                <span class="label">Место:</span>
-                                <span class="value" id="summary-location">—</span>
-                            </div>
-                        </div>
-
-                        <div class="summary-card">
-                            <h4>Контактная информация</h4>
-                            <div class="summary-item">
-                                <span class="label">Имя:</span>
-                                <span class="value" id="summary-name">—</span>
-                            </div>
-                            <div class="summary-item">
-                                <span class="label">Телефон:</span>
-                                <span class="value" id="summary-phone">—</span>
-                            </div>
-                            <div class="summary-item">
-                                <span class="label">Email:</span>
-                                <span class="value" id="summary-email">—</span>
-                            </div>
-                        </div>
-
-                        <div class="summary-card price-card">
-                            <h4>Стоимость</h4>
-                            <div class="summary-item total-price">
-                                <span class="label">Общая стоимость:</span>
-                                <span class="value" id="summary-price">— руб.</span>
-                            </div>
-                            <small class="price-note">Окончательная цена может быть скорректирована после обсуждения деталей</small>
-                        </div>
-                    </div>
-
-                    <div class="form-group terms-checkbox">
-                        <label class="checkbox-label">
-                            {{ form.confirm_terms }}
-                            <span class="checkbox-custom"></span>
-                            Я согласен с <a href="#" class="terms-link">условиями бронирования</a> и
-                            <a href="#" class="terms-link">политикой конфиденциальности</a>
-                        </label>
-                    </div>
-                </div>
-
-                <!-- Навигация по шагам -->
-                <div class="form-navigation">
-                    <button type="button" class="nav-button prev-btn" disabled>← Назад</button>
-                    <button type="button" class="nav-button next-btn">Далее →</button>
-                    <button type="submit" class="submit-btn" style="display: none;">Забронировать</button>
-                </div>
-            </form>
-        </div>
+    <div class="booking-steps">
+        <div class="step active">1. Выбор услуги</div>
+        <div class="step">2. Дата и время</div>
+        <div class="step">3. Контактные данные</div>
+        <div class="step">4. Подтверждение</div>
     </div>
+
+    <form method="POST" action="/booking/create/">
+        {% csrf_token %}
+
+        <!-- Step 1: Service Selection -->
+        <div id="step-1" class="booking-step">
+            <h2>Выберите услугу</h2>
+            <div class="form-group">
+                <label class="form-label">Услуга:</label>
+                <select name="service" class="form-input" required>
+                    <option value="">-- Выберите услугу --</option>
+                    {% for service in form.service.field.queryset %}
+                        <option value="{{ service.id }}" {% if service.id == form.initial.service.id %}selected{% endif %}>
+                            {{ service.name }} - {{ service.price }} руб.
+                        </option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="mt-3">
+                <button type="button" class="btn next-step">Далее</button>
+            </div>
+        </div>
+
+        <!-- Step 2: Date & Time -->
+        <div id="step-2" class="booking-step hidden">
+            <h2>Выберите дату и время</h2>
+
+            <div class="form-group">
+                <label class="form-label">Дата съемки:</label>
+                <input type="date" name="booking_date" class="form-input" min="{{ min_date|date:'Y-m-d' }}" required>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Время начала:</label>
+                <input type="time" name="booking_time" class="form-input" min="09:00" max="21:00" required>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Продолжительность (часы):</label>
+                <input type="number" name="duration" class="form-input" min="1" max="8" value="2" required>
+            </div>
+
+            <div class="mt-3">
+                <button type="button" class="btn btn-secondary prev-step">Назад</button>
+                <button type="button" class="btn next-step">Далее</button>
+            </div>
+        </div>
+
+        <!-- Step 3: Contact Details -->
+        <div id="step-3" class="booking-step hidden">
+            <h2>Контактная информация</h2>
+
+            <div class="form-group">
+                <label class="form-label">Ваше имя:</label>
+                <input type="text" name="client_name" class="form-input" value="{{ user.get_full_name|default:user.username }}" required>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Телефон:</label>
+                <input type="tel" name="client_phone" class="form-input" placeholder="+7 (999) 999-99-99" required>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Email:</label>
+                <input type="email" name="client_email" class="form-input" value="{{ user.email }}" required>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">Место съемки:</label>
+                <input type="text" name="location" class="form-input" placeholder="Адрес или название места">
+            </div>
+
+            <div class="mt-3">
+                <button type="button" class="btn btn-secondary prev-step">Назад</button>
+                <button type="button" class="btn next-step">Далее</button>
+            </div>
+        </div>
+
+        <!-- Step 4: Confirmation -->
+        <div id="step-4" class="booking-step hidden">
+            <h2>Подтверждение</h2>
+
+            <div class="card mb-3">
+                <h3>Детали бронирования:</h3>
+                <div id="summary-details"></div>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">
+                    <input type="checkbox" name="confirm_terms" required>
+                    Я согласен с условиями бронирования
+                </label>
+            </div>
+
+            <div class="mt-3">
+                <button type="button" class="btn btn-secondary prev-step">Назад</button>
+                <button type="submit" class="btn">Создать бронирование</button>
+            </div>
+        </div>
+    </form>
 </div>
-{% endblock %}
 
-{% block extra_css %}
-<style>
-    /* Все стили остаются такими же, как вы их предоставили */
-    /* Я не буду их дублировать, чтобы не перегружать ответ */
-    .booking-page {
-        padding-top: 100px;
-        min-height: 100vh;
-        background: linear-gradient(135deg, #0a0a0a 0%, #1a1a1a 100%);
-    }
-
-    .booking-container {
-        max-width: 1200px;
-        margin: 0 auto;
-        padding: 2rem;
-    }
-
-    /* ... остальные стили ... */
-
-    .form-input {
-        width: 100%;
-        padding: 1rem;
-        background: rgba(255, 255, 255, 0.05);
-        border: 1px solid #333;
-        border-radius: 10px;
-        color: white;
-        font-size: 1rem;
-        transition: border-color 0.3s ease;
-    }
-
-    /* ... остальные стили ... */
-</style>
-{% endblock %}
-
-{% block extra_js %}
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('DOM загружен, инициализация формы бронирования...');
+    let currentStep = 1;
+    const totalSteps = 4;
+    const steps = document.querySelectorAll('.step');
 
-    // Элементы DOM
-    const steps = document.querySelectorAll('.form-step');
-    const stepIndicators = document.querySelectorAll('.step');
-    const prevBtn = document.querySelector('.prev-btn');
-    const nextBtn = document.querySelector('.next-btn');
-    const submitBtn = document.querySelector('.submit-btn');
-    const form = document.getElementById('bookingForm');
+    function showStep(stepNumber) {
+        document.querySelectorAll('.booking-step').forEach(el => el.classList.add('hidden'));
+        document.getElementById(`step-${stepNumber}`).classList.remove('hidden');
 
-    let currentStep = 0;
-
-    // Проверяем существование элементов
-    if (!steps.length || !stepIndicators.length || !prevBtn || !nextBtn || !submitBtn || !form) {
-        console.error('Не найдены необходимые элементы DOM');
-        return;
+        steps.forEach((step, index) => {
+            step.classList.remove('active');
+            if (index < stepNumber) step.classList.add('active');
+        });
     }
 
-    console.log('Элементы найдены, инициализация...');
-
-    // Инициализация
-    showStep(currentStep);
-    updateServiceOptions();
-    initEventListeners();
-
-    function initEventListeners() {
-        // Выбор услуги
-        const serviceBtns = document.querySelectorAll('.select-service-btn');
-        serviceBtns.forEach(btn => {
-            btn.addEventListener('click', function(e) {
-                e.preventDefault();
-                const serviceId = this.dataset.service;
-                console.log('Выбрана услуга:', serviceId);
-
-                document.getElementById('id_service').value = serviceId;
-
-                // Обновляем UI
-                document.querySelectorAll('.service-option').forEach(opt => {
-                    opt.classList.remove('selected');
-                });
-                this.closest('.service-option').classList.add('selected');
-
-                // Переходим к следующему шагу
-                nextStep();
-            });
-        });
-
-        // Выбор даты
-        const dateOptions = document.querySelectorAll('.date-option');
-        dateOptions.forEach(option => {
-            option.addEventListener('click', function(e) {
-                e.preventDefault();
-                const date = this.dataset.date;
-                console.log('Выбрана дата:', date);
-
-                document.getElementById('id_booking_date').value = date;
-
-                // Обновляем UI
-                document.querySelectorAll('.date-option').forEach(opt => {
-                    opt.classList.remove('selected');
-                });
-                this.classList.add('selected');
-            });
-        });
-
-        // Обновление сводки в реальном времени
-        const inputs = document.querySelectorAll('#step2 input, #step3 input, #step3 textarea, #id_booking_time, #id_duration, #id_location');
-        inputs.forEach(input => {
-            input.addEventListener('change', updateSummary);
-            input.addEventListener('input', updateSummary);
-        });
-
-        // Навигация по шагам
-        prevBtn.addEventListener('click', prevStep);
-        nextBtn.addEventListener('click', nextStep);
-
-        // Отправка формы
-        form.addEventListener('submit', function(e) {
-            if (!validateStep(currentStep)) {
-                e.preventDefault();
-                alert('Пожалуйста, заполните все обязательные поля');
+    document.querySelectorAll('.next-step').forEach(btn => {
+        btn.addEventListener('click', function() {
+            if (validateStep(currentStep)) {
+                currentStep++;
+                if (currentStep === totalSteps) {
+                    updateSummary();
+                }
+                showStep(currentStep);
             }
         });
-    }
+    });
 
-    // Функции навигации
-    function showStep(step) {
-        // Скрываем все шаги
-        steps.forEach(s => s.classList.remove('active'));
-        stepIndicators.forEach(s => s.classList.remove('active'));
-
-        // Показываем текущий шаг
-        if (steps[step]) steps[step].classList.add('active');
-        if (stepIndicators[step]) stepIndicators[step].classList.add('active');
-
-        // Обновляем кнопки
-        prevBtn.disabled = step === 0;
-
-        if (step === steps.length - 1) {
-            nextBtn.style.display = 'none';
-            submitBtn.style.display = 'block';
-            updateSummary();
-        } else {
-            nextBtn.style.display = 'block';
-            submitBtn.style.display = 'none';
-        }
-
-        currentStep = step;
-        console.log('Текущий шаг:', step + 1);
-    }
-
-    function nextStep() {
-        console.log('Переход к следующему шагу...');
-        // Валидация текущего шага
-        if (validateStep(currentStep)) {
-            if (currentStep < steps.length - 1) {
-                showStep(currentStep + 1);
-            }
-        }
-    }
-
-    function prevStep() {
-        console.log('Переход к предыдущему шагу...');
-        if (currentStep > 0) {
-            showStep(currentStep - 1);
-        }
-    }
+    document.querySelectorAll('.prev-step').forEach(btn => {
+        btn.addEventListener('click', function() {
+            currentStep--;
+            showStep(currentStep);
+        });
+    });
 
     function validateStep(step) {
-        let isValid = true;
-
-        // Валидация шага 1 (выбор услуги)
-        if (step === 0) {
-            const serviceId = document.getElementById('id_service').value;
-            if (!serviceId) {
-                alert('Пожалуйста, выберите услугу');
-                isValid = false;
-            }
-        }
-
-        // Валидация шага 2 (дата и время)
+        // Простая валидация для примера
         if (step === 1) {
-            const date = document.getElementById('id_booking_date').value;
-            const time = document.getElementById('id_booking_time').value;
-            const duration = document.getElementById('id_duration').value;
-
-            if (!date || !time || !duration) {
-                alert('Пожалуйста, заполните все поля даты и времени');
-                isValid = false;
+            const service = document.querySelector('[name="service"]').value;
+            if (!service) {
+                alert('Выберите услугу');
+                return false;
             }
         }
-
-        // Валидация шага 3 (контакты)
-        if (step === 2) {
-            const name = document.getElementById('id_client_name').value;
-            const phone = document.getElementById('id_client_phone').value;
-            const email = document.getElementById('id_client_email').value;
-
-            if (!name || !phone || !email) {
-                alert('Пожалуйста, заполните все контактные поля');
-                isValid = false;
-            }
-        }
-
-        // Валидация шага 4 (подтверждение)
-        if (step === 3) {
-            const terms = document.getElementById('id_confirm_terms');
-            if (terms && !terms.checked) {
-                alert('Пожалуйста, согласитесь с условиями бронирования');
-                isValid = false;
-            }
-        }
-
-        return isValid;
-    }
-
-    function updateServiceOptions() {
-        const serviceId = document.getElementById('id_service').value;
-        if (serviceId) {
-            document.querySelectorAll('.service-option').forEach(opt => {
-                if (opt.dataset.serviceId === serviceId) {
-                    opt.classList.add('selected');
-                }
-            });
-        }
+        return true;
     }
 
     function updateSummary() {
-        console.log('Обновление сводки...');
-
-        // Услуга
-        const serviceId = document.getElementById('id_service').value;
-        const serviceOption = document.querySelector(`.service-option[data-service-id="${serviceId}"]`);
-        if (serviceOption) {
-            const serviceName = serviceOption.querySelector('h4');
-            if (serviceName) {
-                document.getElementById('summary-service').textContent = serviceName.textContent;
-            }
-
-            // Обновляем стоимость
-            const priceElement = serviceOption.querySelector('.service-price');
-            if (priceElement) {
-                const price = priceElement.textContent.replace(' руб.', '');
-                const duration = document.getElementById('id_duration').value || 1;
-                const totalPrice = parseInt(price) * parseInt(duration);
-                document.getElementById('summary-price').textContent = `${totalPrice} руб.`;
-            }
-        }
-
-        // Дата и время
-        const date = document.getElementById('id_booking_date').value;
-        const time = document.getElementById('id_booking_time').value;
-        const duration = document.getElementById('id_duration').value;
-
-        if (date && time) {
-            const [year, month, day] = date.split('-');
-            const [hours, minutes] = time.split(':');
-            const dateObj = new Date(year, month - 1, day, hours, minutes);
-
-            const options = {
-                weekday: 'long',
-                year: 'numeric',
-                month: 'long',
-                day: 'numeric',
-                hour: '2-digit',
-                minute: '2-digit'
-            };
-
-            document.getElementById('summary-datetime').textContent =
-                dateObj.toLocaleDateString('ru-RU', options);
-        }
-
-        if (duration) {
-            document.getElementById('summary-duration').textContent = duration + ' часов';
-        }
-
-        // Место
-        const location = document.getElementById('id_location').value;
-        document.getElementById('summary-location').textContent = location || 'Не указано';
-
-        // Контактная информация
-        const nameInput = document.getElementById('id_client_name');
-        const phoneInput = document.getElementById('id_client_phone');
-        const emailInput = document.getElementById('id_client_email');
-
-        if (nameInput) document.getElementById('summary-name').textContent = nameInput.value || '—';
-        if (phoneInput) document.getElementById('summary-phone').textContent = phoneInput.value || '—';
-        if (emailInput) document.getElementById('summary-email').textContent = emailInput.value || '—';
+        const formData = new FormData(document.querySelector('form'));
+        const summary = `
+            <p><strong>Услуга:</strong> ${document.querySelector('[name="service"] option:checked').textContent}</p>
+            <p><strong>Дата:</strong> ${formData.get('booking_date')}</p>
+            <p><strong>Время:</strong> ${formData.get('booking_time')}</p>
+            <p><strong>Продолжительность:</strong> ${formData.get('duration')} ч.</p>
+            <p><strong>Имя:</strong> ${formData.get('client_name')}</p>
+            <p><strong>Телефон:</strong> ${formData.get('client_phone')}</p>
+            <p><strong>Email:</strong> ${formData.get('client_email')}</p>
+        `;
+        document.getElementById('summary-details').innerHTML = summary;
     }
+
+    // Устанавливаем минимальную дату (завтра)
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    document.querySelector('[name="booking_date"]').min = tomorrow.toISOString().split('T')[0];
+
+    showStep(1);
 });
 </script>
 {% endblock %}

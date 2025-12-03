@@ -1,252 +1,39 @@
-{% load static %}
-<!DOCTYPE html>
-<html>
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Регистрация - Фотограф</title>
-    <link rel="stylesheet" href="{% static 'styles.css' %}">
-    <style>
-        /* Временные стили для отладки */
-        .debug-border {
-            border: 1px solid red !important;
-        }
-    </style>
-</head>
-<body class="login-page">
-    {% include 'header.html' %}
+{% extends 'base.html' %}
 
-    <main class="login-main">
-        <div class="login-container">
-            <div class="login-card">
-                <div class="login-header">
-                    <h1 class="login-title">Регистрация</h1>
-                    <p class="login-subtitle">Присоединяйтесь к {{ total_users|default:"0" }} пользователям</p>
-                </div>
+{% block title %}Регистрация{% endblock %}
 
-                <form method="post" class="login-form">
-                    {% csrf_token %}
+{% block content %}
+<div class="card">
+    <h1>Регистрация</h1>
 
-                    {% if form.errors %}
-                    <div class="error-message">
-                        <div class="error-icon">!</div>
-                        <div class="error-list">
-                            {% for field in form %}
-                                {% for error in field.errors %}
-                                    <p class="error-item">{{ error }}</p>
-                                {% endfor %}
-                            {% endfor %}
-                            {% for error in form.non_field_errors %}
-                                <p class="error-item">{{ error }}</p>
-                            {% endfor %}
-                        </div>
-                    </div>
-                    {% endif %}
+    <form method="POST" action="/register/">
+        {% csrf_token %}
 
-                    <div class="form-group">
-                        <label for="{{ form.username.id_for_label }}" class="form-label">
-                            Имя пользователя
-                        </label>
-                        <div class="input-wrapper">
-                            {{ form.username }}
-                            <span class="input-icon">👤</span>
-                        </div>
-                        {% if form.username.help_text %}
-                        <div class="help-text">{{ form.username.help_text }}</div>
-                        {% endif %}
-                    </div>
-
-                    <div class="form-group">
-                        <label for="{{ form.email.id_for_label }}" class="form-label">
-                            Email
-                        </label>
-                        <div class="input-wrapper">
-                            {{ form.email }}
-                            <span class="input-icon">📧</span>
-                        </div>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="{{ form.password1.id_for_label }}" class="form-label">
-                            Пароль
-                        </label>
-                        <div class="input-wrapper">
-                            {{ form.password1 }}
-                            <span class="input-icon">🔒</span>
-                            <button type="button" class="password-toggle" id="password1Toggle">
-                                <span class="toggle-icon">👁️</span>
-                            </button>
-                        </div>
-                        {% if form.password1.help_text %}
-                        <div class="help-text">{{ form.password1.help_text }}</div>
-                        {% endif %}
-                    </div>
-
-                    <!-- Подтверждение пароля -->
-                    <div class="form-group">
-                        <label for="{{ form.password2.id_for_label }}" class="form-label">
-                            Подтверждение пароля
-                        </label>
-                        <div class="input-wrapper">
-                            {{ form.password2 }}
-                            <span class="input-icon">🔒</span>
-                            <button type="button" class="password-toggle" id="password2Toggle">
-                                <span class="toggle-icon">👁️</span>
-                            </button>
-                        </div>
-                        {% if form.password2.help_text %}
-                        <div class="help-text">{{ form.password2.help_text }}</div>
-                        {% endif %}
-                    </div>
-
-                    <div class="database-info">
-                        <div class="db-icon">🗄️</div>
-                        <p>Ваши данные будут безопасно сохранены в базе данных</p>
-                    </div>
-
-                    <button type="submit" class="login-button">
-                        <span class="button-text">Создать аккаунт</span>
-                        <span class="button-db">💾</span>
-                    </button>
-
-                    <div class="login-footer">
-                        <p>Уже есть аккаунт? <a href="../login" class="register-link">Войти</a></p>
-                    </div>
-                </form>
-            </div>
-
-            <div class="login-decoration">
-                <div class="decoration-circle circle-1"></div>
-                <div class="decoration-circle circle-2"></div>
-                <div class="decoration-circle circle-3"></div>
-                <div class="database-icon">🗃️</div>
-                <div class="db-stats">
-                    <div class="stat-item">
-                        <span class="stat-number">{{ total_users|default:"0" }}</span>
-                        <span class="stat-label">пользователей</span>
-                    </div>
-                </div>
-            </div>
+        <div class="form-group">
+            <label class="form-label">Имя пользователя:</label>
+            <input type="text" name="username" class="form-input" required>
         </div>
-    </main>
 
-    <script>
-        // Добавляем классы к полям формы при загрузке
-        document.addEventListener('DOMContentLoaded', function() {
-            // Находим все поля формы и добавляем им класс form-input
-            const formInputs = document.querySelectorAll('input[type="text"], input[type="email"], input[type="password"]');
-            formInputs.forEach(input => {
-                input.classList.add('form-input');
+        <div class="form-group">
+            <label class="form-label">Email:</label>
+            <input type="email" name="email" class="form-input" required>
+        </div>
 
-                // Добавляем placeholder если его нет
-                if (!input.getAttribute('placeholder')) {
-                    if (input.type === 'text' && input.name.includes('username')) {
-                        input.setAttribute('placeholder', 'Введите имя пользователя');
-                    } else if (input.type === 'email') {
-                        input.setAttribute('placeholder', 'Введите ваш email');
-                    } else if (input.type === 'password' && input.name.includes('password1')) {
-                        input.setAttribute('placeholder', 'Введите пароль');
-                    } else if (input.type === 'password' && input.name.includes('password2')) {
-                        input.setAttribute('placeholder', 'Подтвердите пароль');
-                    }
-                }
-            });
+        <div class="form-group">
+            <label class="form-label">Пароль:</label>
+            <input type="password" name="password1" class="form-input" required>
+        </div>
 
-            // Переключение видимости пароля 1
-            const password1Toggle = document.getElementById('password1Toggle');
-            if (password1Toggle) {
-                password1Toggle.addEventListener('click', function() {
-                    const passwordInput = document.getElementById('{{ form.password1.id_for_label }}');
-                    const toggleIcon = this.querySelector('.toggle-icon');
+        <div class="form-group">
+            <label class="form-label">Подтвердите пароль:</label>
+            <input type="password" name="password2" class="form-input" required>
+        </div>
 
-                    if (passwordInput.type === 'password') {
-                        passwordInput.type = 'text';
-                        toggleIcon.textContent = '👁️‍🗨️';
-                    } else {
-                        passwordInput.type = 'password';
-                        toggleIcon.textContent = '👁️';
-                    }
-                });
-            }
+        <button type="submit" class="btn">Зарегистрироваться</button>
+    </form>
 
-            // Переключение видимости пароля 2
-            const password2Toggle = document.getElementById('password2Toggle');
-            if (password2Toggle) {
-                password2Toggle.addEventListener('click', function() {
-                    const passwordInput = document.getElementById('{{ form.password2.id_for_label }}');
-                    const toggleIcon = this.querySelector('.toggle-icon');
-
-                    if (passwordInput.type === 'password') {
-                        passwordInput.type = 'text';
-                        toggleIcon.textContent = '👁️‍🗨️';
-                    } else {
-                        passwordInput.type = 'password';
-                        toggleIcon.textContent = '👁️';
-                    }
-                });
-            }
-
-            // Анимация при отправке формы
-            const loginForm = document.querySelector('.login-form');
-            if (loginForm) {
-                loginForm.addEventListener('submit', function(e) {
-                    const button = this.querySelector('.login-button');
-                    if (button) {
-                        const originalText = button.querySelector('.button-text').textContent;
-                        button.disabled = true;
-                        button.querySelector('.button-text').textContent = 'Сохранение в базу...';
-                        button.style.opacity = '0.7';
-
-                        setTimeout(() => {
-                            button.querySelector('.button-text').textContent = originalText;
-                            button.disabled = false;
-                            button.style.opacity = '1';
-                        }, 2000);
-                    }
-                });
-            }
-
-            // Валидация в реальном времени
-            document.querySelectorAll('.form-input').forEach(input => {
-                input.addEventListener('blur', function() {
-                    if (this.value.trim() !== '') {
-                        this.classList.add('filled');
-                    } else {
-                        this.classList.remove('filled');
-                    }
-                });
-
-                input.addEventListener('focus', function() {
-                    this.parentElement.classList.add('focused');
-                });
-
-                input.addEventListener('blur', function() {
-                    this.parentElement.classList.remove('focused');
-                });
-            });
-        });
-
-        // Исправление скролла
-        function fixScroll() {
-            const loginPage = document.querySelector('.login-page');
-            const loginMain = document.querySelector('.login-main');
-
-            if (loginPage && loginMain) {
-                // Проверяем, нужно ли добавить скролл
-                const pageHeight = loginPage.scrollHeight;
-                const viewportHeight = window.innerHeight;
-
-                if (pageHeight > viewportHeight) {
-                    loginPage.style.overflowY = 'auto';
-                } else {
-                    loginPage.style.overflowY = 'visible';
-                }
-            }
-        }
-
-        // Вызываем при загрузке и изменении размера окна
-        window.addEventListener('load', fixScroll);
-        window.addEventListener('resize', fixScroll);
-    </script>
-</body>
-</html>
+    <div class="mt-3">
+        <p>Уже есть аккаунт? <a href="/login/">Войти</a></p>
+    </div>
+</div>
+{% endblock %}
