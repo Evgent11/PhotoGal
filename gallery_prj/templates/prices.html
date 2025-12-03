@@ -28,7 +28,9 @@
                             <div class="service-duration">⏱ {{ service.duration }}</div>
                             {% endif %}
                             <div class="service-price">{{ service.price }} ₽</div>
-                            <button class="book-button">Забронировать</button>
+                            <a href="/booking/create/">
+                                <button class="book-button">Забронировать</button>
+                            </a>
                         </div>
                         {% endfor %}
                     </div>

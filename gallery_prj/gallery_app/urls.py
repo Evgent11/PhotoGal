@@ -21,11 +21,12 @@ urlpatterns = [
 
     path('booking/create/', views.create_booking, name='create_booking'),
     path('booking/my/', views.user_bookings, name='user_bookings'),
-    path('booking/<uuid:booking_id>/', views.booking_detail, name='booking_detail'),
     path('booking/<uuid:booking_id>/cancel/', views.cancel_booking, name='cancel_booking'),
+    path('booking/<uuid:booking_id>/delete/', views.delete_booking, name='delete_booking'),
 
 
     path('admin/bookings/', views.admin_booking_list, name='admin_booking_list'),
     path('admin/bookings/<uuid:booking_id>/', views.admin_booking_detail, name='admin_booking_detail'),
     path('admin/calendar/', views.admin_calendar_view, name='admin_calendar'),
+
 ]

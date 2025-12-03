@@ -26,15 +26,15 @@
     </div>
     
     <div class="profile-stats">
-        <div class="stat-card">
+        <div class="prof-stat-card">
             <span class="stat-value">{{ days_registered }}</span>
             <span class="stat-label">дней с нами</span>
         </div>
-        <div class="stat-card">
+        <div class="prof-stat-card">
             <span class="stat-value">{{ user.date_joined|date:"d.m.Y" }}</span>
             <span class="stat-label">дата регистрации</span>
         </div>
-        <div class="stat-card">
+        <div class="prof-stat-card">
             <span class="stat-value">{{ user.last_login|date:"d.m.Y H:i"|default:"Никогда" }}</span>
             <span class="stat-label">последний вход</span>
         </div>
